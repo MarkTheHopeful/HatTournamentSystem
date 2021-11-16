@@ -2,16 +2,13 @@ from typing import List, Set, Any
 import random
 
 
-def split_into_near_equal_parts(items: List[Any], size: int) -> List[List[Any]]:
-    random.shuffle(items)
-
-    amount = (len(items) + size - 1) // size
-
-    parts = []
-    for i in range(amount):
-        parts.append(items[i * size: min(len(items), (i + 1) * size)])
-
-    return parts
+def split_into_near_equal_parts(items: List[Any], amount: int) -> List[List[Any]]:
+    if amount > len(items):
+        raise Exception("Not possible to split list to more parts, than the length of the list")
+    result = [[] for _ in range(amount)]
+    for i in range(len(items)):  # TODO: Probably, not the best solution
+        result[i % amount].append(items[i])
+    return result
 
 
 def str_list(items: List[Any], prefix: str = "", separator: str = "\n", suffix: str = "") -> str:

@@ -1,7 +1,8 @@
-from typing import List, DefaultDict
+from typing import List
+from typing import Counter as CounterT
 import enum
 from play_pair import PlayPair
-from collections import defaultdict
+from collections import Counter
 
 
 class GameStatus(enum.Enum):
@@ -14,9 +15,9 @@ class Game:
         self.participants: List[PlayPair] = participants
         self.words: List[str] = words
         self.state: GameStatus = GameStatus.not_started
-        self.result: DefaultDict[PlayPair, int] = defaultdict(int)
+        self.result: CounterT[PlayPair, int] = Counter(participants)
 
-    def conclude_result(self, results: DefaultDict[PlayPair, int]) -> bool:  # TODO: replace with an exception
+    def conclude_result(self, results: Counter[PlayPair, int]) -> bool:  # TODO: replace with an exception
         if self.state == GameStatus.completed:
             return False
         if set(self.participants) != set(results.keys()):  # FIXME: bad way to do this
