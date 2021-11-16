@@ -16,7 +16,7 @@ class Game:
         self.state: GameStatus = GameStatus.not_started
         self.result: CounterT[int, int] = Counter(participants_uid)
 
-    def conclude_result(self, results: CounterT[int, int]) -> bool:  # TODO: replace with an exception
+    def conclude_result(self, results: CounterT[int]) -> bool:  # TODO: replace with an exception
         if self.state == GameStatus.completed:
             return False
         if set(self.participants_uid) != set(results.keys()):  # FIXME: bad way to do this

@@ -6,7 +6,7 @@ from typing import List, Optional
 from collections import Counter
 from typing import Counter as CounterT
 
-VERSION_INTERFACE: str = "0.0.1"
+VERSION_INTERFACE: str = "0.0.2"
 HELP: str = """
 Доступные команды:
 quit, exit
@@ -18,10 +18,14 @@ add players
 delete players
 template fill
 add round
+add subround
 checkout round
 checkout subround
 checkout game
 set game results
+split to games
+conclude subround result
+conclude round result
 """
 
 if __name__ == "__main__":
@@ -90,6 +94,17 @@ if __name__ == "__main__":
             else:
                 current_round = current_tournament.rounds[round_id]
                 print("Раунд успешно выбран")
+        elif command == "add subround":
+            if current_round is None:
+                print("Сначала выберите раунд")
+                continue
+            players_uid: List[int] = list(map(int, input("Введите uid пар участников нового подраунда:\n").split()))
+            words_amount: int = int(input("Укажите, сколько слов из банка взять:\n"))
+            result: bool = current_round.add_subround(players_uid, words_amount)
+            if result:
+                print("Подраунд успешно создан")
+            else:
+                print("Что-то пошло не так")
         elif command == "checkout subround":
             if current_round is None:
                 print("Сначала выберите раунд")
@@ -100,6 +115,16 @@ if __name__ == "__main__":
             else:
                 current_subround = current_round.subrounds[subround_id]
                 print("Подраунд успешно выбран")
+        elif command == "split to games":
+            if current_subround is None:
+                print("Сначала выберите подраунд")
+                continue
+            games_amount: int = int(input("Укажите, на сколько игр разбить подраунд:\n"))
+            result: bool = current_subround.split_players_to_games(games_amount)
+            if result:
+                print("Подраунд успешно разбит на игры")
+            else:
+                print("Что-то пошло не так")
         elif command == "checkout game":
             if current_subround is None:
                 print("Сначала выберите подраунд")
@@ -114,4 +139,33 @@ if __name__ == "__main__":
             if current_game is None:
                 print("Сначала выберите игру")
                 continue
-            print("Epic fail")
+            game_results: CounterT[int] = Counter(current_game.participants_uid)
+            for player_uid in current_game.participants_uid:
+                game_results[player_uid] = int(
+                    input(f"Enter result for pair {current_tournament.uid_to_play_pair[player_uid]}:\n"))
+
+            result: bool = current_game.conclude_result(game_results)
+            if result:
+                print("Итоги успешно подведены")
+            else:
+                print("Произошла какая-то ошибка при подведении итогов")
+        elif command == "conclude subround result":
+            result: bool = current_subround.conclude_results()
+            if result:
+                print("Итоги подраунда успешно подведены")
+            else:
+                print("Подведение итогов не прошло успешно")
+        elif command == "conclude round result":
+            result: bool = current_round.conclude_results()
+            if result:
+                print("Итоги раунда успешно подведены")
+            else:
+                print("Подведение итогов не прошло успешно")
+        elif command == "get k best":
+            k: int = int(input("Укажите число для взятия:\n"))
+            result: Optional[List[int]] = current_round.get_top_n(k)
+            if result:
+                for uid in result:
+                    print(current_tournament.uid_to_play_pair[uid])
+            else:
+                print("Что-то пошло не так")

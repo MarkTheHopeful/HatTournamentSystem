@@ -19,7 +19,7 @@ class Round:
         self.difficulty: int = difficulty
         self.word_bank = word_bank
         self.subrounds: List[Subround] = []
-        self.results: CounterT[int, int] = Counter(participants_uid)
+        self.results: CounterT[int] = Counter(participants_uid)
         self.state = RoundStatus.not_started
 
     def add_subround(self, participants: List[int], words_to_take: int) -> bool:
@@ -66,7 +66,7 @@ class Subround:
         self.state: SubroundStatus = SubroundStatus.not_split
         self.participants_uid: List[int] = participants
         self.words: List[str] = words
-        self.results: CounterT[int, int] = Counter(participants)
+        self.results: CounterT[int] = Counter(participants)
         self.games: List[Game] = []
 
     def split_players_to_games(self, amount_of_games: int) -> bool:  # TODO: replace bool with exceptions
