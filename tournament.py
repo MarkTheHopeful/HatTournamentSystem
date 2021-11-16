@@ -51,3 +51,8 @@ class Tournament:
         del self.player_name_to_pair_uid[second_player]
 
         return True
+
+    def create_round(self, participants_uid: List[int], difficulty: int, name: str) -> None:
+        participants: List[PlayPair] = [self.uid_to_play_pair[uid] for uid in participants_uid]
+        new_round: Round = Round(name, participants, difficulty, self.words)
+        self.rounds.append(new_round)
