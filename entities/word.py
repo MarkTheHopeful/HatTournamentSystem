@@ -1,5 +1,5 @@
 from collections import defaultdict
-from utils import take_n_random_from_set
+from utils.utils import take_n_random_from_set
 from typing import List, DefaultDict, Set, Dict, Tuple
 
 

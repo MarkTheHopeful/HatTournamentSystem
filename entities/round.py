@@ -2,9 +2,9 @@ import enum
 from typing import List
 from typing import Counter as CounterT
 from collections import Counter
-from game import Game, GameStatus
-from utils import split_into_near_equal_parts
-from word import WordBank
+from entities.game import Game, GameStatus
+from utils.utils import split_into_near_equal_parts
+from entities.word import WordBank
 
 
 class RoundStatus(enum.Enum):

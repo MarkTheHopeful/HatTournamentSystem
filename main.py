@@ -1,7 +1,7 @@
-from game import Game
-from round import Round, Subround
-from tournament import Tournament
-from template_data import basic_players_names, basic_words_d
+from entities.game import Game
+from entities.round import Round, Subround
+from entities.tournament import Tournament
+from utils.template_data import basic_players_names, basic_words_d
 from typing import List, Optional
 from collections import Counter
 from typing import Counter as CounterT
