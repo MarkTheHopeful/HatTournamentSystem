@@ -35,6 +35,12 @@ def new_tournament():
     return functions.new_tournament(token, tournament_name)
 
 
+@app.route('/api/v1/tournament', methods=['GET'])
+def get_tournaments():
+    token: str = request.get_json()["token"]
+    return functions.get_tournaments(token)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

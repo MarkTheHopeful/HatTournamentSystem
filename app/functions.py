@@ -158,6 +158,21 @@ def new_tournament(token, tournament_name):
 
 
 @function_response
+def get_tournaments(token):
+    """
+    :param token:
+    :return:
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({})
+        return code, data
+    tournaments = dbm.get_tournaments(username)
+    return 200, json.dumps({"tournaments": tournaments})
+
+
+@function_response
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
