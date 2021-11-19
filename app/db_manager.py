@@ -1,5 +1,6 @@
 from exceptions.DBExceptions import *
 
+
 def database_response(database_fun):
     def wrapped(*args, **kwargs):
         try:
@@ -82,6 +83,13 @@ class DBManager:
             self.db.session.commit()
         except IntegrityError as e:
             raise DBUserAlreadyExistsException(message=e)
+
+    @database_response
+    def insert_tournament(self, tournament_obj, username):
+        u = self.models.User.query.filter_by(username=username).first()
+        new_tournament = self.models.Tournament(name=tournament_obj.name, owner=u)
+        self.db.session.add(new_tournament)
+        self.db.session.commit()
 
     @database_response
     def clear_all_tables(self):

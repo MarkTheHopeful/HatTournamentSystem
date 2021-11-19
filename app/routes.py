@@ -28,6 +28,13 @@ def register():
     return functions.register(username, password)
 
 
+@app.route('/api/v1/tournament/new', methods=['POST'])
+def new_tournament():
+    token: str = request.get_json()["token"]
+    tournament_name: str = request.get_json()["name"]
+    return functions.new_tournament(token, tournament_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

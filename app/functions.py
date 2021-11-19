@@ -15,6 +15,7 @@ from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, D
     DBTokenNotFoundException
 from utils.utils import gen_token, full_stack
 from entities.user import User
+from entities.tournament import Tournament
 
 
 class Response:
@@ -138,6 +139,22 @@ def register(username, password):
         code = 200
         data = json.dumps({})
     return code, data
+
+
+@function_response
+def new_tournament(token, tournament_name):
+    """
+    :param token: session token
+    :param tournament_name: name of new tournament to create
+    :return: 200, {} if success; 403, {} if token is invalid
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({})
+        return code, data
+    dbm.insert_tournament(Tournament(name=tournament_name), username)
+    return 200, json.dumps({})
 
 
 @function_response
