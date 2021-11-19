@@ -21,15 +21,14 @@ class Response:
     code = 500
     data = None
 
-    def __init__(self, code=500, data=json.dumps({})):
+    def __init__(self, code=500, data=None):
         self.code = code
         if data is None:
             data = json.dumps({})
         self.data = json.loads(data)
 
     def __str__(self):
-        return str(json.dumps({"code": self.code,
-                               "data": self.data}))
+        return str(json.dumps({"data": self.data}))
 
 
 def function_response(result_function):
@@ -49,16 +48,16 @@ def function_response(result_function):
             code, data = result_function(*args, **kwargs)
         except DBException as e:
             code = e.code
-            data = json.dumps({"Error": str(e), "Stack": full_stack()})
+            data = json.dumps({"error": str(e), "stack": full_stack()})
             print("DBException:", e)
         # except GameException as e:
         #     code = 410
         #     data = json.dumps({"Error": str(e), "Stack": full_stack()})
         #     print("GameException:", e)
         except Exception as e:
-            data = json.dumps({"Error": str(e), "Stack": full_stack()})
+            data = json.dumps({"error": str(e), "stack": full_stack()})
             print(e)
-        return str(Response(code, data))
+        return str(Response(code, data)), code
 
     return wrapped
 
@@ -96,18 +95,18 @@ def login(username, password):
     """
     :param username: not empty, should be real username
     :param password: not empty, should be user's password
-    :return: 402, {} if there is no user with such credentials; 200, {'Token': <token>} if there is
+    :return: 404, {} if there is no user with such credentials; 200, {'Token': <token>} if there is
     Can throw DBException, but shouldn't
     """
     try:
         u_hash = dbm.get_passhash_by_username(username)
     except DBUserNotFoundException:
-        code = 402
+        code = 404
         data = json.dumps({})
         return code, data
 
     if not check_password(password, u_hash):
-        code = 402
+        code = 404
         data = json.dumps({})
         return code, data
 
@@ -123,7 +122,7 @@ def register(username, password):
     """
     :param username: new username, should be unique and consist only of allowed characters
     :param password: password, should be strong
-    :return: 200, {} if success; 405, {} if username is already in use
+    :return: 200, {} if success; 400, {} if username is already in use
     Can throw DBException, but shouldn't
     TODO: add password check
     TODO: add allowed characters list and verification
@@ -132,7 +131,7 @@ def register(username, password):
     try:
         dbm.insert_user(User(username=username), pass_hash)
     except DBUserAlreadyExistsException:
-        code = 405
+        code = 400
         data = json.dumps({})
         return code, data
     finally:
@@ -146,9 +145,9 @@ def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
     :return: 403, {} if the secret code is incorrect
-    299, {} if everything is dropped and recreated successfully
+    200, {} if everything is dropped and recreated successfully
     """
     if secret_code != Config.ADMIN_SECRET:
         return 403, json.dumps({})
     dbm.clear_all_tables()
-    return 299, json.dumps({})
+    return 200, json.dumps({})
