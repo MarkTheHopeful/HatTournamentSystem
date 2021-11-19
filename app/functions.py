@@ -160,8 +160,8 @@ def new_tournament(token, tournament_name):
 @function_response
 def get_tournaments(token):
     """
-    :param token:
-    :return:
+    :param token: session token
+    :return: 200, {"tournaments": <list of tournaments>} if success; 403, {} if token is invalid
     """
     username = token_auth(token)
     if username == -1:
@@ -170,6 +170,22 @@ def get_tournaments(token):
         return code, data
     tournaments = dbm.get_tournaments(username)
     return 200, json.dumps({"tournaments": tournaments})
+
+
+@function_response
+def new_player(token, tournament_new, name_first, name_second):
+    """
+    :param token: session token
+    :param tournament_new: name of the tournament to which the players will be added
+    :param name_first: name of the first player in pair
+    :param name_second: name of the second player in pair
+    :return:
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({})
+        return code, data
 
 
 @function_response

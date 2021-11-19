@@ -58,9 +58,10 @@ class Round(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
 
 
-class Player(db.Model):
+class Player(db.Model):     # FIXME: Actually, it's a pair of players, but I postponed renaming
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, index=True)
+    name_first = db.Column(db.String, index=True)
+    name_second = db.Column(db.String, index=True)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'))
     rounds = db.relationship(
         "Round",

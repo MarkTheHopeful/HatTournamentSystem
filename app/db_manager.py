@@ -95,7 +95,6 @@ class DBManager:
     @database_response
     def get_tournaments(self, username):
         u = self.models.User.query.filter_by(username=username).first()
-
         return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in list(u.tournaments)]
 
     @database_response
