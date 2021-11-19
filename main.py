@@ -6,7 +6,7 @@ from typing import List, Optional
 from collections import Counter
 from typing import Counter as CounterT
 
-VERSION_INTERFACE: str = "0.0.2"
+VERSION_INTERFACE: str = "0.0.3"
 HELP: str = """
 Доступные команды:
 quit, exit
@@ -26,6 +26,7 @@ set game results
 split to games
 conclude subround result
 conclude round result
+get k best
 """
 
 if __name__ == "__main__":

@@ -46,6 +46,7 @@ class Round:
             self.results += subround.results
 
         self.state = RoundStatus.completed
+        return True
 
     def get_top_n(self, n: int) -> List[int]:
         if n > len(self.participants_uid):

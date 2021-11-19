@@ -22,4 +22,5 @@ class Game:
         if set(self.participants_uid) != set(results.keys()):  # FIXME: bad way to do this
             return False
         self.result = results
+        self.state = GameStatus.completed
         return True
