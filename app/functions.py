@@ -12,7 +12,7 @@ from app.extensions import dbm
 from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
-    DBTokenNotFoundException
+    DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -186,6 +186,20 @@ def new_player(token, tournament_new, name_first, name_second):
         code = 403
         data = json.dumps({})
         return code, data
+    try:
+        dbm.insert_player(username, tournament_new, name_first, name_second)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({})
+        return code, data
+    except DBPlayerAlreadyExistsException as e:
+        code = 400
+        data = json.dumps({})
+        return code, data
+    finally:
+        code = 200
+        data = json.dumps({})
+    return code, data
 
 
 @function_response

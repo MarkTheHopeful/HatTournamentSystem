@@ -62,7 +62,7 @@ class Player(db.Model):     # FIXME: Actually, it's a pair of players, but I pos
     id = db.Column(db.Integer, primary_key=True)
     name_first = db.Column(db.String, index=True)
     name_second = db.Column(db.String, index=True)
-    tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'))
+    tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
     rounds = db.relationship(
         "Round",
         secondary=players_in_rounds,

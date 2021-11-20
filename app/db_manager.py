@@ -98,12 +98,33 @@ class DBManager:
         return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in list(u.tournaments)]
 
     @database_response
+    def insert_player(self, username, tournament_name, name_first, name_second):
+        u = self.models.User.query.filter_by(username=username).first()
+        tournament = self.models.Tournament.query.filter(
+            self.models.Tournament.user_id == u.id and self.models.Tournament.name == tournament_name).first()
+        if tournament is None:
+            raise DBTournamentNotOwnedException()
+
+        if self.is_player_in_table(name_first, tournament.id) or self.is_player_in_table(name_second, tournament.id):
+            raise DBPlayerAlreadyExistsException()
+
+        new_player = self.models.Player(name_first=name_first, name_second=name_second, tournament=tournament)
+        try:
+            self.db.session.add(new_player)
+            self.db.session.commit()
+        except IntegrityError as e:
+            raise RuntimeError(e)  # FIXME: This state should never be reached!
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
 
+    def is_player_in_table(self, player_name, tournament_id):
+        return self.models.Player.query.filter(self.models.Player.tournament_id == tournament_id and (
+                self.models.Player.name_first == player_name or
+                self.models.Player.name_second == player_name)).first() is not None
+
     def is_user_exists(self, username):
         u = self.models.User.query.filter_by(username=username).first()
-        if u is None:
-            return False
-        return True
+        return not (u is None)
