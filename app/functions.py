@@ -14,7 +14,7 @@ from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
     DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPairNotFoundException, \
-    DBWordAlreadyExistsException, DBWordNotFoundException, DBRoundAlreadyExistsException
+    DBWordAlreadyExistsException, DBWordNotFoundException, DBRoundAlreadyExistsException, DBRoundNotFoundException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -384,6 +384,35 @@ def get_rounds(token, tournament_name):
         data = json.dumps({"Message": "Not owner of the tournament"})
         return code, data
     return 200, json.dumps({"Rounds": rounds})
+
+
+@function_response
+def delete_round(token, tournament_name, round_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament from which the round will be deleted
+    :param round_name: name of the round to delete
+    :return: 200, {} on success; 400, {} if no such round in tournament, 403, {} if not owner of tournament
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        dbm.delete_round(username, tournament_name, round_name)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBRoundNotFoundException as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
+    finally:
+        code = 200
+        data = json.dumps({})
+    return code, data
 
 
 @function_response

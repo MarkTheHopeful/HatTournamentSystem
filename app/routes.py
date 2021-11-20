@@ -98,6 +98,13 @@ def get_rounds(tournament_name):
     return functions.get_rounds(token, tournament_name)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/rounds', methods=['DELETE'])
+def delete_round(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    return functions.delete_round(token, tournament_name, round_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

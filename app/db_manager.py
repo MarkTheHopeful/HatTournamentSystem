@@ -5,6 +5,8 @@ import entities.word
 import entities.round
 
 
+# FIXME: too many duplicated lines!
+
 def database_response(database_fun):
     def wrapped(*args, **kwargs):
         try:
@@ -175,6 +177,15 @@ class DBManager:
     def get_rounds(self, username, tournament_name):
         tournament = self.get_tournament(username, tournament_name)
         return [entities.round.Round(dbu=r).to_base_info_dict() for r in tournament.rounds]
+
+    @database_response
+    def delete_round(self, username, tournament_name, round_name):
+        tournament = self.get_tournament(username, tournament_name)
+        round_to_delete = self.models.Round.query.filter_by(name=round_name, tournament_id=tournament.id).first()
+        if round_to_delete is None:
+            raise DBRoundNotFoundException()
+        self.db.session.delete(round_to_delete)
+        self.db.session.commit()
 
     @database_response
     def clear_all_tables(self):

@@ -55,3 +55,8 @@ class DBWordNotFoundException(DBException):
 class DBRoundAlreadyExistsException(DBException):
     def __init__(self, message="Round with such name already exists"):
         super(DBRoundAlreadyExistsException, self).__init__(609, message)
+
+
+class DBRoundNotFoundException(DBException):
+    def __init__(self, message="No such round in tournament"):
+        super(DBRoundNotFoundException, self).__init__(610, message)
