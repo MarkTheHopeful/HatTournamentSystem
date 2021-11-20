@@ -426,6 +426,7 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
     :return: 200, {} on success; 400, {} if the pair is already in the round;
     404, {} if no such pair or round; 403, {} if not owner
     """
+
     username = token_auth(token)
     if username == -1:
         code = 403
@@ -453,6 +454,33 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
         code = 200
         data = json.dumps({})
     return code, data
+
+
+@function_response
+def get_players_in_round(token, tournament_name, round_name):
+    """
+        :param token: session token
+        :param tournament_name: name of the tournament to interact with
+        :param round_name: name of the round from which take players
+        :return: 200, {"Players":<list of players in round>} on success;
+        404, {} if no such round; 403, {} if not owner
+        """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        players = dbm.get_players_in_round(username, tournament_name, round_name)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBRoundNotFoundException as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
+        return code, data
+    return 200, json.dumps({"Players": players})
 
 
 @function_response

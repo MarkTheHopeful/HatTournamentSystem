@@ -204,6 +204,15 @@ class DBManager:
             raise DBPlayerAlreadyInRoundException()
 
     @database_response
+    def get_players_in_round(self, username, tournament_name, round_name):
+        tournament = self.get_tournament(username, tournament_name)
+        round_obj = self.get_round(round_name, tournament.id)
+        if round_obj is None:
+            raise DBRoundNotFoundException()
+        return [entities.player.Player(dbu=p).to_base_info_dict() for p in
+                self.db.session.query(self.models.Round).filter_by(id=round_obj.id).first().players]
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
