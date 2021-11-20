@@ -99,11 +99,7 @@ class DBManager:
 
     @database_response
     def insert_player(self, username, tournament_name, name_first, name_second):
-        u = self.models.User.query.filter_by(username=username).first()
-        tournament = self.models.Tournament.query.filter(
-            self.models.Tournament.user_id == u.id and self.models.Tournament.name == tournament_name).first()
-        if tournament is None:
-            raise DBTournamentNotOwnedException()
+        tournament = self.get_tournament(username, tournament_name)
 
         if self.is_player_in_table(name_first, tournament.id) or self.is_player_in_table(name_second, tournament.id):
             raise DBPlayerAlreadyExistsException()
@@ -116,15 +112,38 @@ class DBManager:
             raise RuntimeError(e)  # FIXME: This state should never be reached!
 
     @database_response
+    def delete_player(self, username, tournament_name, name_first, name_second):
+        tournament = self.get_tournament(username, tournament_name)
+        pair_to_delete = self.get_pair(name_first, name_second, tournament.id)
+        if pair_to_delete is None:
+            raise DBPairNotFoundException()
+        self.db.session.delete(pair_to_delete)
+        self.db.session.commit()
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
 
     def is_player_in_table(self, player_name, tournament_id):
-        return self.models.Player.query.filter(self.models.Player.tournament_id == tournament_id and (
-                self.models.Player.name_first == player_name or
-                self.models.Player.name_second == player_name)).first() is not None
+        return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
+                (self.models.Player.name_first == player_name) |
+                (self.models.Player.name_second == player_name)))).first() is not None
 
     def is_user_exists(self, username):
         u = self.models.User.query.filter_by(username=username).first()
         return not (u is None)
+
+    def get_pair(self, name_first, name_second, tournament_id):
+        return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
+                ((self.models.Player.name_first == name_first) & (self.models.Player.name_second == name_second)) |
+                ((self.models.Player.name_first == name_second) & (self.models.Player.name_second == name_first)))
+                                                )).first()
+
+    def get_tournament(self, username, tournament_name):
+        u = self.models.User.query.filter_by(username=username).first()
+        tournament = self.models.Tournament.query.filter((
+                (self.models.Tournament.user_id == u.id) & (self.models.Tournament.name == tournament_name))).first()
+        if tournament is None:
+            raise DBTournamentNotOwnedException()
+        return tournament

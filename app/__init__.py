@@ -1,5 +1,5 @@
 from flask import Flask
-from app.extensions import db, migrate, dbm#, gm
+from app.extensions import db, migrate, dbm
 from app import models
 from config import Config
 

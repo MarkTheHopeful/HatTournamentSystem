@@ -6,6 +6,7 @@ class DBException(Exception):
 
     def __init__(self, code=699, message="Unknown DB error"):
         self.code = code
+        self.message = message
         super(DBException, self).__init__(message)
 
 
@@ -32,3 +33,8 @@ class DBPlayerAlreadyExistsException(DBException):
 class DBTournamentNotOwnedException(DBException):
     def __init__(self, message="Tournament does not exists or owned by different user"):
         super(DBTournamentNotOwnedException, self).__init__(605, message)
+
+
+class DBPairNotFoundException(DBException):
+    def __init__(self, message="No such pair in tournament"):
+        super(DBPairNotFoundException, self).__init__(606, message)

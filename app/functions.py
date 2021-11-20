@@ -12,7 +12,7 @@ from app.extensions import dbm
 from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
-    DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException
+    DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPairNotFoundException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -173,28 +173,58 @@ def get_tournaments(token):
 
 
 @function_response
-def new_player(token, tournament_new, name_first, name_second):
+def new_player(token, tournament_name, name_first, name_second):
     """
     :param token: session token
-    :param tournament_new: name of the tournament to which the players will be added
+    :param tournament_name: name of the tournament to which the players will be added
     :param name_first: name of the first player in pair
     :param name_second: name of the second player in pair
-    :return:
+    :return: 200, {} on success; 400, {} if one of players is already in tournament, 403, {} is not owner of tournament
     """
     username = token_auth(token)
     if username == -1:
         code = 403
-        data = json.dumps({})
+        data = json.dumps({"Message": "Invalid/Outdated token"})
         return code, data
     try:
-        dbm.insert_player(username, tournament_new, name_first, name_second)
+        dbm.insert_player(username, tournament_name, name_first, name_second)
     except DBTournamentNotOwnedException as e:
         code = 403
-        data = json.dumps({})
+        data = json.dumps({"Message": "Invalid/Outdated token"})
         return code, data
     except DBPlayerAlreadyExistsException as e:
         code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
+    finally:
+        code = 200
         data = json.dumps({})
+    return code, data
+
+
+@function_response
+def delete_player(token, tournament_name, name_first, name_second):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to which the players will be added
+    :param name_first: name of the first player in pair
+    :param name_second: name of the second player in pair
+    :return: 200, {} on success; 400, {} if no such pair in tournament, 403, {} is not owner of tournament
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        dbm.delete_player(username, tournament_name, name_first, name_second)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBPairNotFoundException as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
         return code, data
     finally:
         code = 200
