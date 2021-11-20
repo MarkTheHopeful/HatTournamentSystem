@@ -208,7 +208,7 @@ def get_players(token, tournament_name):
     """
     :param token: session token
     :param tournament_name: name of the tournament to which the players will be added
-    :return: 200, {"players": <list of players>} on success; 403, {} if not the owner of tournament
+    :return: 200, {"Players": <list of players>} on success; 403, {} if not the owner of tournament
     """
     username = token_auth(token)
     if username == -1:
@@ -282,6 +282,27 @@ def new_word(token, tournament_name, word_text, word_difficulty):
         code = 200
         data = json.dumps({})
     return code, data
+
+
+@function_response
+def get_words(token, tournament_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament
+    :return: 200, {"Words": <list of words>} on success; 403, {} if not the owner of tournament
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        words = dbm.get_words(username, tournament_name)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": "Not owner of the tournament"})
+        return code, data
+    return 200, json.dumps({"Players": words})
 
 
 @function_response

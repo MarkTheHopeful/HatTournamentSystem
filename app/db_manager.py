@@ -1,6 +1,7 @@
 from exceptions.DBExceptions import *
 import entities.tournament
 import entities.player
+import entities.word
 
 
 def database_response(database_fun):
@@ -141,6 +142,11 @@ class DBManager:
             raise RuntimeError(e)  # FIXME: This state should never be reached!
 
     @database_response
+    def get_words(self, username, tournament_name):
+        tournament = self.get_tournament(username, tournament_name)
+        return [entities.word.Word(dbu=w).to_base_info_dict() for w in tournament.words]
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
@@ -170,4 +176,4 @@ class DBManager:
 
     def is_word_in_table(self, word_text, tournament_id):
         return self.models.Word.query.filter((self.models.Word.text == word_text) & (
-                    self.models.Word.tournament_id == tournament_id)).first() is not None
+                self.models.Word.tournament_id == tournament_id)).first() is not None
