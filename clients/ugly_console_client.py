@@ -1,5 +1,5 @@
 from entities.game import Game
-from entities.round import Round, Subround
+from entities.round_console import Round, Subround
 from entities.tournament_console import Tournament
 from utils.template_data import basic_players_names, basic_words_d
 from typing import List, Optional

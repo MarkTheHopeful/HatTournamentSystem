@@ -84,6 +84,14 @@ def delete_word(tournament_name):
     return functions.delete_word(token, tournament_name, word_text)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/rounds', methods=['POST'])
+def new_round(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    round_difficulty: int = int(request.get_json()["round_difficulty"])
+    return functions.new_round(token, tournament_name, round_name, round_difficulty)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

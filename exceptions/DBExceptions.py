@@ -1,6 +1,8 @@
 from sqlalchemy.exc import IntegrityError
 
 
+# FIXME: All this Exception system should be properly reworked!
+
 class DBException(Exception):
     code = 699
 
@@ -48,3 +50,8 @@ class DBWordAlreadyExistsException(DBException):
 class DBWordNotFoundException(DBException):
     def __init__(self, message="No such word in tournament"):
         super(DBWordNotFoundException, self).__init__(608, message)
+
+
+class DBRoundAlreadyExistsException(DBException):
+    def __init__(self, message="Round with such name already exists"):
+        super(DBRoundAlreadyExistsException, self).__init__(609, message)

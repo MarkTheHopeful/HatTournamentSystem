@@ -1,5 +1,5 @@
 from typing import List, Tuple, Dict
-from entities.round import Round
+from entities.round_console import Round
 from entities.play_pair import PlayPair
 from entities.word_console import WordBank
 

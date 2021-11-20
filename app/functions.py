@@ -13,7 +13,7 @@ from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
     DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPairNotFoundException, \
-    DBWordAlreadyExistsException, DBWordNotFoundException
+    DBWordAlreadyExistsException, DBWordNotFoundException, DBRoundAlreadyExistsException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -311,7 +311,7 @@ def delete_word(token, tournament_name, word_text):
     :param token: session token
     :param tournament_name: name of the tournament to which the players will be added
     :param word_text: word
-    :return: 200, {} on success; 400, {} if no such word in tournament, 403, {} is not owner of tournament
+    :return: 200, {} on success; 400, {} if no such word in tournament, 403, {} if not owner of tournament
     """
     username = token_auth(token)
     if username == -1:
@@ -333,6 +333,34 @@ def delete_word(token, tournament_name, word_text):
         data = json.dumps({})
     return code, data
 
+@function_response
+def new_round(token, tournament_name, round_name, round_difficulty):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to add round
+    :param round_name: name of the round
+    :param round_difficulty: expected difficulty of the round
+    :return: 200, {} on success; 400, {} if round with same name is already in tournament; 403, {} if not owner
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        dbm.insert_round(username, tournament_name, round_name, round_difficulty)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": "Not owner of the tournament"})
+        return code, data
+    except DBRoundAlreadyExistsException as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
+    finally:
+        code = 200
+        data = json.dumps({})
+    return code, data
 
 @function_response
 def drop_tables(secret_code):
