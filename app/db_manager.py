@@ -1,5 +1,6 @@
 from exceptions.DBExceptions import *
 import entities.tournament
+import entities.player
 
 
 def database_response(database_fun):
@@ -95,7 +96,7 @@ class DBManager:
     @database_response
     def get_tournaments(self, username):
         u = self.models.User.query.filter_by(username=username).first()
-        return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in list(u.tournaments)]
+        return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in u.tournaments]
 
     @database_response
     def insert_player(self, username, tournament_name, name_first, name_second):
@@ -110,6 +111,11 @@ class DBManager:
             self.db.session.commit()
         except IntegrityError as e:
             raise RuntimeError(e)  # FIXME: This state should never be reached!
+
+    @database_response
+    def get_players(self, username, tournament_name):
+        tournament = self.get_tournament(username, tournament_name)
+        return [entities.player.Player(dbu=p).to_base_info_dict() for p in tournament.players]
 
     @database_response
     def delete_player(self, username, tournament_name, name_first, name_second):
@@ -138,7 +144,7 @@ class DBManager:
         return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
                 ((self.models.Player.name_first == name_first) & (self.models.Player.name_second == name_second)) |
                 ((self.models.Player.name_first == name_second) & (self.models.Player.name_second == name_first)))
-                                                )).first()
+                                                )).first()  # FIXME: this look awful!
 
     def get_tournament(self, username, tournament_name):
         u = self.models.User.query.filter_by(username=username).first()

@@ -57,6 +57,12 @@ def delete_player(tournament_name):
     return functions.delete_player(token, tournament_name, name_first, name_second)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/players', methods=['GET'])
+def get_players(tournament_name):
+    token: str = request.get_json()["token"]
+    return functions.get_players(token, tournament_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

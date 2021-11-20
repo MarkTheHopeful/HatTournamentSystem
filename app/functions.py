@@ -190,7 +190,7 @@ def new_player(token, tournament_name, name_first, name_second):
         dbm.insert_player(username, tournament_name, name_first, name_second)
     except DBTournamentNotOwnedException as e:
         code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
+        data = json.dumps({"Message": "Not owner of the tournament"})
         return code, data
     except DBPlayerAlreadyExistsException as e:
         code = 400
@@ -200,6 +200,27 @@ def new_player(token, tournament_name, name_first, name_second):
         code = 200
         data = json.dumps({})
     return code, data
+
+
+@function_response
+def get_players(token, tournament_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to which the players will be added
+    :return: 200, {"players": <list of players>} on success; 403, {} if not the owner of tournament
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        players = dbm.get_players(username, tournament_name)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": "Not owner of the tournament"})
+        return code, data
+    return 200, json.dumps({"Players": players})
 
 
 @function_response
