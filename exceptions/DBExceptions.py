@@ -37,9 +37,9 @@ class DBTournamentNotOwnedException(DBException):
         super(DBTournamentNotOwnedException, self).__init__(605, message)
 
 
-class DBPairNotFoundException(DBException):
+class DBPlayerNotFoundException(DBException):
     def __init__(self, message="No such pair in tournament"):
-        super(DBPairNotFoundException, self).__init__(606, message)
+        super(DBPlayerNotFoundException, self).__init__(606, message)
 
 
 class DBWordAlreadyExistsException(DBException):
@@ -60,3 +60,8 @@ class DBRoundAlreadyExistsException(DBException):
 class DBRoundNotFoundException(DBException):
     def __init__(self, message="No such round in tournament"):
         super(DBRoundNotFoundException, self).__init__(610, message)
+
+
+class DBPlayerAlreadyInRoundException(DBException):
+    def __init__(self, message="The player is already in tournament"):
+        super(DBPlayerAlreadyInRoundException, self).__init__(611, message)

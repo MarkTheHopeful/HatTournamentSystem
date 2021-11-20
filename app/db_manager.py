@@ -88,7 +88,7 @@ class DBManager:
             self.db.session.add(new_user)
             self.db.session.commit()
         except IntegrityError as e:
-            raise DBUserAlreadyExistsException(message=e)
+            raise DBUserAlreadyExistsException()
 
     @database_response
     def insert_tournament(self, tournament_obj, username):
@@ -114,7 +114,7 @@ class DBManager:
             self.db.session.add(new_player)
             self.db.session.commit()
         except IntegrityError as e:
-            raise RuntimeError(e)  # FIXME: This state should never be reached!
+            raise RuntimeError(e)  # FIXME: This state should never be reached! and how will this work?
 
     @database_response
     def get_players(self, username, tournament_name):
@@ -126,7 +126,7 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
         pair_to_delete = self.get_pair(name_first, name_second, tournament.id)
         if pair_to_delete is None:
-            raise DBPairNotFoundException()
+            raise DBPlayerNotFoundException()
         self.db.session.delete(pair_to_delete)
         self.db.session.commit()
 
@@ -186,6 +186,22 @@ class DBManager:
             raise DBRoundNotFoundException()
         self.db.session.delete(round_to_delete)
         self.db.session.commit()
+
+    @database_response
+    def add_pair_id_to_round(self, username, tournament_name, round_name, pair_id):
+        tournament = self.get_tournament(username, tournament_name)
+        round_obj = self.get_round(round_name, tournament.id)
+        if round_obj is None:
+            raise DBRoundNotFoundException()
+        player_obj = self.models.Player.query.filter_by(id=pair_id).first()
+        if player_obj is None:
+            raise DBPlayerNotFoundException()
+        try:
+            round_obj.players.append(player_obj)
+            self.db.session.add(round_obj)
+            self.db.session.commit()
+        except IntegrityError as e:
+            raise DBPlayerAlreadyInRoundException()
 
     @database_response
     def clear_all_tables(self):

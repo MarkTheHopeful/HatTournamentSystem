@@ -1,4 +1,6 @@
-flask
+flask~=2.0.2
 flask_sqlalchemy
 flask_migrate
-bcrypt
+bcrypt~=3.2.0
+
+SQLAlchemy~=1.4.27

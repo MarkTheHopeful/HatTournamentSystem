@@ -45,7 +45,8 @@ class Round(db.Model):
     players = db.relationship(
         "Player",
         secondary=players_in_rounds,
-        back_populates="rounds")
+        back_populates="rounds",
+        lazy='dynamic')
     # subrounds = db.relationship('Subround', backref='round', lazy='dynamic')
 
 
@@ -58,7 +59,7 @@ class Round(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
 
 
-class Player(db.Model):     # FIXME: Actually, it's a pair of players, but I postponed renaming
+class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postponed renaming
     id = db.Column(db.Integer, primary_key=True)
     name_first = db.Column(db.String, index=True)
     name_second = db.Column(db.String, index=True)
@@ -66,7 +67,8 @@ class Player(db.Model):     # FIXME: Actually, it's a pair of players, but I pos
     rounds = db.relationship(
         "Round",
         secondary=players_in_rounds,
-        back_populates="players"
+        back_populates="players",
+        lazy='dynamic'
     )
 
 
