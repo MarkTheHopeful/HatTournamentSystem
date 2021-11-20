@@ -147,6 +147,15 @@ class DBManager:
         return [entities.word.Word(dbu=w).to_base_info_dict() for w in tournament.words]
 
     @database_response
+    def delete_word(self, username, tournament_name, word_text):
+        tournament = self.get_tournament(username, tournament_name)
+        word_to_delete = self.models.Word.query.filter_by(text=word_text, tournament_id=tournament.id).first()
+        if word_to_delete is None:
+            raise DBWordNotFoundException()
+        self.db.session.delete(word_to_delete)
+        self.db.session.commit()
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

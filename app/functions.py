@@ -13,7 +13,7 @@ from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
     DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPairNotFoundException, \
-    DBWordAlreadyExistsException
+    DBWordAlreadyExistsException, DBWordNotFoundException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -303,6 +303,35 @@ def get_words(token, tournament_name):
         data = json.dumps({"Message": "Not owner of the tournament"})
         return code, data
     return 200, json.dumps({"Players": words})
+
+
+@function_response
+def delete_word(token, tournament_name, word_text):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to which the players will be added
+    :param word_text: word
+    :return: 200, {} on success; 400, {} if no such word in tournament, 403, {} is not owner of tournament
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        dbm.delete_word(username, tournament_name, word_text)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBWordNotFoundException as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
+    finally:
+        code = 200
+        data = json.dumps({})
+    return code, data
 
 
 @function_response

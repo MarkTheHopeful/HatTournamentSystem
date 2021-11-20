@@ -43,3 +43,8 @@ class DBPairNotFoundException(DBException):
 class DBWordAlreadyExistsException(DBException):
     def __init__(self, message="Word is already in DB"):
         super(DBWordAlreadyExistsException, self).__init__(607, message)
+
+
+class DBWordNotFoundException(DBException):
+    def __init__(self, message="No such word in tournament"):
+        super(DBWordNotFoundException, self).__init__(608, message)
