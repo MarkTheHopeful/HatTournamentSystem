@@ -4,6 +4,7 @@
 # The format is: {code: CODE, state: STATE, data: {JSON}}, where code is the status code
 # State is the description of the code
 # And the data is the product, which the function returns
+# FIXME: the file is too bloated! Should add more decorators to remove repetition
 
 
 import json
@@ -19,7 +20,7 @@ from entities.user import User
 from entities.tournament import Tournament
 
 
-class Response:
+class Response:  # FIXME: Exists an actual Flask.Response object!
     code = 500
     data = None
 
@@ -302,7 +303,7 @@ def get_words(token, tournament_name):
         code = 403
         data = json.dumps({"Message": "Not owner of the tournament"})
         return code, data
-    return 200, json.dumps({"Players": words})
+    return 200, json.dumps({"Words": words})
 
 
 @function_response
@@ -333,6 +334,7 @@ def delete_word(token, tournament_name, word_text):
         data = json.dumps({})
     return code, data
 
+
 @function_response
 def new_round(token, tournament_name, round_name, round_difficulty):
     """
@@ -361,6 +363,28 @@ def new_round(token, tournament_name, round_name, round_difficulty):
         code = 200
         data = json.dumps({})
     return code, data
+
+
+@function_response
+def get_rounds(token, tournament_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament
+    :return: 200, {"Rounds": <list of rounds>} on success; 403, {} if not the owner
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        rounds = dbm.get_rounds(username, tournament_name)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": "Not owner of the tournament"})
+        return code, data
+    return 200, json.dumps({"Rounds": rounds})
+
 
 @function_response
 def drop_tables(secret_code):

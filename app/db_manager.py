@@ -2,6 +2,7 @@ from exceptions.DBExceptions import *
 import entities.tournament
 import entities.player
 import entities.word
+import entities.round
 
 
 def database_response(database_fun):
@@ -169,6 +170,11 @@ class DBManager:
             self.db.session.commit()
         except IntegrityError as e:
             raise RuntimeError(e)  # FIXME: This state should never be reached!
+
+    @database_response
+    def get_rounds(self, username, tournament_name):
+        tournament = self.get_tournament(username, tournament_name)
+        return [entities.round.Round(dbu=r).to_base_info_dict() for r in tournament.rounds]
 
     @database_response
     def clear_all_tables(self):
