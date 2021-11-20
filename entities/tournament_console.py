@@ -1,7 +1,7 @@
 from typing import List, Tuple, Dict
 from entities.round import Round
 from entities.play_pair import PlayPair
-from entities.word import WordBank
+from entities.word_console import WordBank
 
 
 class Tournament:

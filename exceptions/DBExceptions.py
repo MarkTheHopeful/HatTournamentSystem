@@ -38,3 +38,8 @@ class DBTournamentNotOwnedException(DBException):
 class DBPairNotFoundException(DBException):
     def __init__(self, message="No such pair in tournament"):
         super(DBPairNotFoundException, self).__init__(606, message)
+
+
+class DBWordAlreadyExistsException(DBException):
+    def __init__(self, message="Word is already in DB"):
+        super(DBWordAlreadyExistsException, self).__init__(607, message)

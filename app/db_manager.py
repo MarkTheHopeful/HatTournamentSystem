@@ -127,6 +127,20 @@ class DBManager:
         self.db.session.commit()
 
     @database_response
+    def insert_word(self, username, tournament_name, word_text, word_difficulty):
+        tournament = self.get_tournament(username, tournament_name)
+
+        if self.is_word_in_table(word_text, tournament.id):
+            raise DBWordAlreadyExistsException()
+
+        new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament)
+        try:
+            self.db.session.add(new_word)
+            self.db.session.commit()
+        except IntegrityError as e:
+            raise RuntimeError(e)  # FIXME: This state should never be reached!
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
@@ -153,3 +167,7 @@ class DBManager:
         if tournament is None:
             raise DBTournamentNotOwnedException()
         return tournament
+
+    def is_word_in_table(self, word_text, tournament_id):
+        return self.models.Word.query.filter((self.models.Word.text == word_text) & (
+                    self.models.Word.tournament_id == tournament_id)).first() is not None

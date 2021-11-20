@@ -12,7 +12,8 @@ from app.extensions import dbm
 from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
-    DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPairNotFoundException
+    DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPairNotFoundException, \
+    DBWordAlreadyExistsException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -244,6 +245,36 @@ def delete_player(token, tournament_name, name_first, name_second):
         data = json.dumps({"Message": e.message})
         return code, data
     except DBPairNotFoundException as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
+    finally:
+        code = 200
+        data = json.dumps({})
+    return code, data
+
+
+@function_response
+def new_word(token, tournament_name, word_text, word_difficulty):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to which the word will be added
+    :param word_text: text of word
+    :param word_difficulty: how difficult is it to explain the word
+    :return: 200, {} on success; 400, {} if the word is already in tournament, 403, {} is not owner of tournament
+    """
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        dbm.insert_word(username, tournament_name, word_text, word_difficulty)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": "Not owner of the tournament"})
+        return code, data
+    except DBWordAlreadyExistsException as e:
         code = 400
         data = json.dumps({"Message": e.message})
         return code, data

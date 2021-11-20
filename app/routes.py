@@ -63,6 +63,14 @@ def get_players(tournament_name):
     return functions.get_players(token, tournament_name)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/words', methods=['POST'])
+def new_word(tournament_name):
+    token: str = request.get_json()["token"]
+    word_text: str = request.get_json()["word_text"]
+    word_difficulty: int = int(request.get_json()["word_difficulty"])
+    return functions.new_word(token, tournament_name, word_text, word_difficulty)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

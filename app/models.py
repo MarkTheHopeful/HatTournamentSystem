@@ -74,4 +74,4 @@ class Word(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String, index=True, unique=True)
     difficulty = db.Column(db.Integer, index=True)
-    tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'))
+    tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
