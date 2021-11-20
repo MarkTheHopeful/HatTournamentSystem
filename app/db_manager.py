@@ -213,6 +213,22 @@ class DBManager:
                 self.db.session.query(self.models.Round).filter_by(id=round_obj.id).first().players]
 
     @database_response
+    def delete_player_from_round(self, username, tournament_name, round_name, pair_id):
+        tournament = self.get_tournament(username, tournament_name)  # FIXME: Duplicated code!
+        round_obj = self.get_round(round_name, tournament.id)
+        if round_obj is None:
+            raise DBRoundNotFoundException()
+        player_obj = self.models.Player.query.filter_by(id=pair_id).first()
+        if player_obj is None:
+            raise DBPlayerNotFoundException()
+        try:
+            round_obj.players.remove(player_obj)
+            self.db.session.add(round_obj)
+            self.db.session.commit()
+        except IntegrityError as e:
+            raise DBPlayerNotInRoundException()
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

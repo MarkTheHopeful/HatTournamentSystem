@@ -15,7 +15,7 @@ from config import Config
 from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
     DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPlayerNotFoundException, \
     DBWordAlreadyExistsException, DBWordNotFoundException, DBRoundAlreadyExistsException, DBRoundNotFoundException, \
-    DBPlayerAlreadyInRoundException
+    DBPlayerAlreadyInRoundException, DBPlayerNotInRoundException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -481,6 +481,46 @@ def get_players_in_round(token, tournament_name, round_name):
         data = json.dumps({"Message": e.message})
         return code, data
     return 200, json.dumps({"Players": players})
+
+
+@function_response
+def delete_player_from_round(token, tournament_name, round_name, pair_id):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :param pair_id: id of the pair (player) to delete from round
+    :return: 200, {} on success; 400, {} if the pair is not in the round;
+    404, {} if no such pair or round; 403, {} if not owner
+    """
+
+    username = token_auth(token)
+    if username == -1:
+        code = 403
+        data = json.dumps({"Message": "Invalid/Outdated token"})
+        return code, data
+    try:
+        dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
+    except DBTournamentNotOwnedException as e:
+        code = 403
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBRoundNotFoundException as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBPlayerNotFoundException as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
+        return code, data
+    except DBPlayerNotInRoundException as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
+    finally:
+        code = 200
+        data = json.dumps({})
+    return code, data
 
 
 @function_response

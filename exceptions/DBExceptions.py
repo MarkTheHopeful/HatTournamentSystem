@@ -65,3 +65,8 @@ class DBRoundNotFoundException(DBException):
 class DBPlayerAlreadyInRoundException(DBException):
     def __init__(self, message="The player is already in tournament"):
         super(DBPlayerAlreadyInRoundException, self).__init__(611, message)
+
+
+class DBPlayerNotInRoundException(DBException):
+    def __init__(self, message="No such player in the round"):
+        super(DBPlayerNotInRoundException, self).__init__(612, message)

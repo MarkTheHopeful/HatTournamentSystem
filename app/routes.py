@@ -120,6 +120,14 @@ def get_players_from_round(tournament_name):
     return functions.get_players_in_round(token, tournament_name, round_name)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/rounds/player', methods=['DELETE'])
+def delete_player_from_round(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    pair_id: int = int(request.get_json()["player_id"])  # FIXME: Actually, you have no way to get player_id
+    return functions.delete_player_from_round(token, tournament_name, round_name, pair_id)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]
