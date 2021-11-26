@@ -26,6 +26,8 @@ class DBManager:
     db = None
     models = None
 
+    # BASE FUNCTIONS
+
     def init_db(self, db, models):
         self.db = db
         self.models = models
@@ -33,26 +35,73 @@ class DBManager:
     def is_ok(self):
         return self.db is not None and self.models is not None
 
-    @database_response
-    def get_username_and_exptime_by_token(self, token):
+    # HELPERS FUNCTIONS
+
+    def is_user_exists(self, username):
+        u = self.models.User.query.filter_by(username=username).first()
+        return u is not None
+
+    def get_user(self, username):  # Returns Not None User Object
+        u = self.models.User.query.filter_by(username=username).first()
+        if u is None:
+            raise DBObjectNotFound("User")
+        return u
+
+    def is_token_exists(self, token):
+        tok = self.models.Token.query.filter_by(id=token).first()
+        return tok is not None
+
+    def get_token(self, token):
         tok = self.models.Token.query.filter_by(id=token).first()
         if tok is None:
             raise DBObjectNotFound("Token")
-        print(tok.owner.username, tok.expires_in)
+        return tok
+
+    def is_player_in_table(self, player_name, tournament_id):
+        return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
+                (self.models.Player.name_first == player_name) |
+                (self.models.Player.name_second == player_name)))).first() is not None
+
+    def get_pair(self, name_first, name_second, tournament_id):
+        return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
+                ((self.models.Player.name_first == name_first) & (self.models.Player.name_second == name_second)) |
+                ((self.models.Player.name_first == name_second) & (self.models.Player.name_second == name_first)))
+                                                )).first()  # FIXME: this look awful!
+
+    def get_tournament(self, username, tournament_name):
+        u = self.models.User.query.filter_by(username=username).first()
+        tournament = self.models.Tournament.query.filter((
+                (self.models.Tournament.user_id == u.id) & (self.models.Tournament.name == tournament_name))).first()
+        if tournament is None:
+            raise DBObjectNotFound("Tournament")
+        return tournament
+
+    def is_word_in_table(self, word_text, tournament_id):
+        return self.models.Word.query.filter((self.models.Word.text == word_text) & (
+                self.models.Word.tournament_id == tournament_id)).first() is not None
+
+    def get_round(self, round_name, tournament_id):
+        return self.models.Round.query.filter(
+            (self.models.Round.name == round_name) & (self.models.Round.tournament_id == tournament_id)).first()
+
+    # DATABASE RESPONSES
+
+    @database_response
+    def get_username_and_exptime_by_token(self, token):
+        tok = self.get_token(token)
         return tok.owner.username, tok.expires_in
 
     @database_response
     def delete_token(self, token):
-        tok = self.models.Token.query.filter_by(id=token).first()
-        if tok is not None:
-            self.db.session.delete(tok)
-            self.db.session.commit()
+        if not self.is_token_exists(token):
+            return
+        tok = self.get_token(token)
+        self.db.session.delete(tok)
+        self.db.session.commit()
 
     @database_response
     def get_password_hash_by_username(self, username):
-        u = self.models.User.query.filter_by(username=username).first()
-        if u is None:
-            raise DBObjectNotFound("User")
+        u = self.get_user(username)
         return u.password_hash
 
     @database_response
@@ -218,34 +267,3 @@ class DBManager:
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
-
-    def is_player_in_table(self, player_name, tournament_id):
-        return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
-                (self.models.Player.name_first == player_name) |
-                (self.models.Player.name_second == player_name)))).first() is not None
-
-    def is_user_exists(self, username):
-        u = self.models.User.query.filter_by(username=username).first()
-        return not (u is None)
-
-    def get_pair(self, name_first, name_second, tournament_id):
-        return self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
-                ((self.models.Player.name_first == name_first) & (self.models.Player.name_second == name_second)) |
-                ((self.models.Player.name_first == name_second) & (self.models.Player.name_second == name_first)))
-                                                )).first()  # FIXME: this look awful!
-
-    def get_tournament(self, username, tournament_name):
-        u = self.models.User.query.filter_by(username=username).first()
-        tournament = self.models.Tournament.query.filter((
-                (self.models.Tournament.user_id == u.id) & (self.models.Tournament.name == tournament_name))).first()
-        if tournament is None:
-            raise DBObjectNotFound("Tournament")
-        return tournament
-
-    def is_word_in_table(self, word_text, tournament_id):
-        return self.models.Word.query.filter((self.models.Word.text == word_text) & (
-                self.models.Word.tournament_id == tournament_id)).first() is not None
-
-    def get_round(self, round_name, tournament_id):
-        return self.models.Round.query.filter(
-            (self.models.Round.name == round_name) & (self.models.Round.tournament_id == tournament_id)).first()
