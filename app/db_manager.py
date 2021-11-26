@@ -7,18 +7,16 @@ import entities.round
 
 # FIXME: too many duplicated lines!
 
-def database_response(database_fun):
+def database_response(database_fun):  # FIXME: Seems useless
     def wrapped(*args, **kwargs):
         try:
             result = database_fun(*args, **kwargs)
         except DBException as e:
-            # print("DB KNOWN::")
-            # print(e)
             raise e
         except Exception as e:
-            print("DB UNKNOWN::")
+            print("DB UNKNOWN::")  # FIXME: Possibly left here for some particular reason
             print(e)
-            raise DBException()
+            raise DBException(str(e))
         return result
 
     return wrapped
@@ -36,18 +34,8 @@ class DBManager:
         return self.db is not None and self.models is not None
 
     @database_response
-    def get_tokens_by_user_id(self, user_id):
-        return self.models.Token.query.filter_by(user_id=user_id).all()
-
-    @database_response
-    def get_user_id_by_username(self, username):
-        return self.get_user_by_username(username).id
-
-    @database_response
     def get_username_and_exptime_by_token(self, token):
-        # print(token)
         tok = self.models.Token.query.filter_by(id=token).first()
-        # print(tok)
         if tok is None:
             raise DBObjectNotFound("Token")
         print(tok.owner.username, tok.expires_in)
@@ -61,14 +49,7 @@ class DBManager:
             self.db.session.commit()
 
     @database_response
-    def get_user_by_username(self, username):
-        u = self.models.User.query.filter_by(username=username).first()
-        if u is None:
-            raise DBObjectNotFound("User")
-        return u
-
-    @database_response
-    def get_passhash_by_username(self, username):
+    def get_password_hash_by_username(self, username):
         u = self.models.User.query.filter_by(username=username).first()
         if u is None:
             raise DBObjectNotFound("User")
@@ -87,7 +68,7 @@ class DBManager:
         try:
             self.db.session.add(new_user)
             self.db.session.commit()
-        except IntegrityError as e:
+        except IntegrityError:
             raise DBObjectAlreadyExists("User")
 
     @database_response

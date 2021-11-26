@@ -98,7 +98,7 @@ def login(username, password):
     Throws exceptions, but they are handled in wrapper
     """
 
-    u_hash = dbm.get_passhash_by_username(username)
+    u_hash = dbm.get_password_hash_by_username(username)
 
     if not check_password(password, u_hash):
         raise DBObjectNotFound("User")
@@ -338,7 +338,7 @@ def delete_player_from_round(token, tournament_name, round_name, pair_id):
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
-    :return: 403, {} if the secret code is incorrect
+    :return: 404, {} if the secret code is incorrect
     200, {} if everything is dropped and recreated successfully
     """
     if secret_code != Config.ADMIN_SECRET:
