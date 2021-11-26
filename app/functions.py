@@ -12,10 +12,7 @@ import datetime
 from app.extensions import dbm
 from utils.encrypt import encrypt_password, check_password
 from config import Config
-from exceptions.DBExceptions import DBException, DBUserAlreadyExistsException, DBUserNotFoundException, \
-    DBTokenNotFoundException, DBTournamentNotOwnedException, DBPlayerAlreadyExistsException, DBPlayerNotFoundException, \
-    DBWordAlreadyExistsException, DBWordNotFoundException, DBRoundAlreadyExistsException, DBRoundNotFoundException, \
-    DBPlayerAlreadyInRoundException, DBPlayerNotInRoundException
+from exceptions.DBExceptions import DBException, DBObjectNotFound, DBObjectAlreadyExists
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -73,7 +70,7 @@ def token_auth(token):
     """
     try:
         username, exp_time = dbm.get_username_and_exptime_by_token(token)
-    except DBTokenNotFoundException:
+    except DBObjectNotFound:
         return -1
     if exp_time < datetime.datetime.utcnow():
         dbm.delete_token(token)
@@ -104,14 +101,14 @@ def login(username, password):
     """
     try:
         u_hash = dbm.get_passhash_by_username(username)
-    except DBUserNotFoundException:
+    except DBObjectNotFound as e:
         code = 404
-        data = json.dumps({})
+        data = json.dumps({"Message": e.message})
         return code, data
 
     if not check_password(password, u_hash):
         code = 404
-        data = json.dumps({})
+        data = json.dumps({"Message": "User not found"})
         return code, data
 
     tok_uuid, tok_exp = gen_token()
@@ -134,9 +131,9 @@ def register(username, password):
     pass_hash = encrypt_password(password)
     try:
         dbm.insert_user(User(username=username), pass_hash)
-    except DBUserAlreadyExistsException:
+    except DBObjectAlreadyExists as e:
         code = 400
-        data = json.dumps({})
+        data = json.dumps({"Message": e.message})
         return code, data
     finally:
         code = 200
@@ -154,9 +151,14 @@ def new_tournament(token, tournament_name):
     username = token_auth(token)
     if username == -1:
         code = 403
-        data = json.dumps({})
+        data = json.dumps({"Message": "Invalid/Outdated token"})
         return code, data
-    dbm.insert_tournament(Tournament(name=tournament_name), username)
+    try:
+        dbm.insert_tournament(Tournament(name=tournament_name), username)
+    except DBObjectAlreadyExists as e:
+        code = 400
+        data = json.dumps({"Message": e.message})
+        return code, data
     return 200, json.dumps({})
 
 
@@ -169,10 +171,10 @@ def get_tournaments(token):
     username = token_auth(token)
     if username == -1:
         code = 403
-        data = json.dumps({})
+        data = json.dumps({"Message": "Invalid/Outdated token"})
         return code, data
     tournaments = dbm.get_tournaments(username)
-    return 200, json.dumps({"tournaments": tournaments})
+    return 200, json.dumps({"Tournaments": tournaments})
 
 
 @function_response
@@ -191,11 +193,11 @@ def new_player(token, tournament_name, name_first, name_second):
         return code, data
     try:
         dbm.insert_player(username, tournament_name, name_first, name_second)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": "Not owner of the tournament"})
+    except DBObjectNotFound as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
         return code, data
-    except DBPlayerAlreadyExistsException as e:
+    except DBObjectAlreadyExists as e:
         code = 400
         data = json.dumps({"Message": e.message})
         return code, data
@@ -219,9 +221,9 @@ def get_players(token, tournament_name):
         return code, data
     try:
         players = dbm.get_players(username, tournament_name)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": "Not owner of the tournament"})
+    except DBObjectNotFound as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
         return code, data
     return 200, json.dumps({"Players": players})
 
@@ -242,12 +244,8 @@ def delete_player(token, tournament_name, name_first, name_second):
         return code, data
     try:
         dbm.delete_player(username, tournament_name, name_first, name_second)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBPlayerNotFoundException as e:
-        code = 400
+    except DBObjectNotFound as e:
+        code = 404
         data = json.dumps({"Message": e.message})
         return code, data
     finally:
@@ -272,11 +270,11 @@ def new_word(token, tournament_name, word_text, word_difficulty):
         return code, data
     try:
         dbm.insert_word(username, tournament_name, word_text, word_difficulty)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": "Not owner of the tournament"})
+    except DBObjectNotFound as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
         return code, data
-    except DBWordAlreadyExistsException as e:
+    except DBObjectAlreadyExists as e:
         code = 400
         data = json.dumps({"Message": e.message})
         return code, data
@@ -300,9 +298,9 @@ def get_words(token, tournament_name):
         return code, data
     try:
         words = dbm.get_words(username, tournament_name)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": "Not owner of the tournament"})
+    except DBObjectNotFound as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
         return code, data
     return 200, json.dumps({"Words": words})
 
@@ -322,12 +320,8 @@ def delete_word(token, tournament_name, word_text):
         return code, data
     try:
         dbm.delete_word(username, tournament_name, word_text)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBWordNotFoundException as e:
-        code = 400
+    except DBObjectNotFound as e:
+        code = 404
         data = json.dumps({"Message": e.message})
         return code, data
     finally:
@@ -352,11 +346,11 @@ def new_round(token, tournament_name, round_name, round_difficulty):
         return code, data
     try:
         dbm.insert_round(username, tournament_name, round_name, round_difficulty)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": "Not owner of the tournament"})
+    except DBObjectNotFound as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
         return code, data
-    except DBRoundAlreadyExistsException as e:
+    except DBObjectAlreadyExists as e:
         code = 400
         data = json.dumps({"Message": e.message})
         return code, data
@@ -380,9 +374,9 @@ def get_rounds(token, tournament_name):
         return code, data
     try:
         rounds = dbm.get_rounds(username, tournament_name)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": "Not owner of the tournament"})
+    except DBObjectNotFound as e:
+        code = 404
+        data = json.dumps({"Message": e.message})
         return code, data
     return 200, json.dumps({"Rounds": rounds})
 
@@ -402,12 +396,8 @@ def delete_round(token, tournament_name, round_name):
         return code, data
     try:
         dbm.delete_round(username, tournament_name, round_name)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBRoundNotFoundException as e:
-        code = 400
+    except DBObjectNotFound as e:
+        code = 404
         data = json.dumps({"Message": e.message})
         return code, data
     finally:
@@ -434,19 +424,11 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
         return code, data
     try:
         dbm.add_pair_id_to_round(username, tournament_name, round_name, pair_id)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBRoundNotFoundException as e:
+    except DBObjectNotFound as e:
         code = 404
         data = json.dumps({"Message": e.message})
         return code, data
-    except DBPlayerNotFoundException as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBPlayerAlreadyInRoundException as e:
+    except DBObjectAlreadyExists as e:
         code = 400
         data = json.dumps({"Message": e.message})
         return code, data
@@ -472,11 +454,7 @@ def get_players_in_round(token, tournament_name, round_name):
         return code, data
     try:
         players = dbm.get_players_in_round(username, tournament_name, round_name)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBRoundNotFoundException as e:
+    except DBObjectNotFound as e:
         code = 404
         data = json.dumps({"Message": e.message})
         return code, data
@@ -501,20 +479,8 @@ def delete_player_from_round(token, tournament_name, round_name, pair_id):
         return code, data
     try:
         dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
-    except DBTournamentNotOwnedException as e:
-        code = 403
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBRoundNotFoundException as e:
+    except DBObjectNotFound as e:
         code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBPlayerNotFoundException as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBPlayerNotInRoundException as e:
-        code = 400
         data = json.dumps({"Message": e.message})
         return code, data
     finally:

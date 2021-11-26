@@ -49,7 +49,7 @@ class DBManager:
         tok = self.models.Token.query.filter_by(id=token).first()
         # print(tok)
         if tok is None:
-            raise DBTokenNotFoundException()
+            raise DBObjectNotFound("Token")
         print(tok.owner.username, tok.expires_in)
         return tok.owner.username, tok.expires_in
 
@@ -64,14 +64,14 @@ class DBManager:
     def get_user_by_username(self, username):
         u = self.models.User.query.filter_by(username=username).first()
         if u is None:
-            raise DBUserNotFoundException()
+            raise DBObjectNotFound("User")
         return u
 
     @database_response
     def get_passhash_by_username(self, username):
         u = self.models.User.query.filter_by(username=username).first()
         if u is None:
-            raise DBUserNotFoundException()
+            raise DBObjectNotFound("User")
         return u.password_hash
 
     @database_response
@@ -88,14 +88,19 @@ class DBManager:
             self.db.session.add(new_user)
             self.db.session.commit()
         except IntegrityError as e:
-            raise DBUserAlreadyExistsException()
+            raise DBObjectAlreadyExists("User")
 
     @database_response
     def insert_tournament(self, tournament_obj, username):
         u = self.models.User.query.filter_by(username=username).first()
-        new_tournament = self.models.Tournament(name=tournament_obj.name, owner=u)
-        self.db.session.add(new_tournament)
-        self.db.session.commit()
+        try:
+            t = self.get_tournament(username, tournament_obj.name)
+        except DBObjectNotFound as e:
+            new_tournament = self.models.Tournament(name=tournament_obj.name, owner=u)
+            self.db.session.add(new_tournament)
+            self.db.session.commit()
+            return
+        raise DBObjectAlreadyExists("Tournament")
 
     @database_response
     def get_tournaments(self, username):
@@ -107,7 +112,7 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
 
         if self.is_player_in_table(name_first, tournament.id) or self.is_player_in_table(name_second, tournament.id):
-            raise DBPlayerAlreadyExistsException()
+            raise DBObjectAlreadyExists("Player")
 
         new_player = self.models.Player(name_first=name_first, name_second=name_second, tournament=tournament)
         try:
@@ -126,7 +131,7 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
         pair_to_delete = self.get_pair(name_first, name_second, tournament.id)
         if pair_to_delete is None:
-            raise DBPlayerNotFoundException()
+            raise DBObjectNotFound("Player")
         self.db.session.delete(pair_to_delete)
         self.db.session.commit()
 
@@ -135,7 +140,7 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
 
         if self.is_word_in_table(word_text, tournament.id):
-            raise DBWordAlreadyExistsException()
+            raise DBObjectAlreadyExists("Word")
 
         new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament)
         try:
@@ -154,7 +159,7 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
         word_to_delete = self.models.Word.query.filter_by(text=word_text, tournament_id=tournament.id).first()
         if word_to_delete is None:
-            raise DBWordNotFoundException()
+            raise DBObjectNotFound("Word")
         self.db.session.delete(word_to_delete)
         self.db.session.commit()
 
@@ -164,7 +169,7 @@ class DBManager:
 
         round_obj = self.get_round(round_name, tournament.id)
         if round_obj is not None:
-            raise DBRoundAlreadyExistsException()
+            raise DBObjectAlreadyExists("Round")
 
         new_round = self.models.Round(name=round_name, difficulty=round_difficulty, tournament=tournament)
         try:
@@ -183,7 +188,7 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
         round_to_delete = self.models.Round.query.filter_by(name=round_name, tournament_id=tournament.id).first()
         if round_to_delete is None:
-            raise DBRoundNotFoundException()
+            raise DBObjectNotFound("Round")
         self.db.session.delete(round_to_delete)
         self.db.session.commit()
 
@@ -192,23 +197,23 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)
         round_obj = self.get_round(round_name, tournament.id)
         if round_obj is None:
-            raise DBRoundNotFoundException()
+            raise DBObjectNotFound("Round")
         player_obj = self.models.Player.query.filter_by(id=pair_id).first()
         if player_obj is None:
-            raise DBPlayerNotFoundException()
+            raise DBObjectNotFound("Player")
         try:
             round_obj.players.append(player_obj)
             self.db.session.add(round_obj)
             self.db.session.commit()
         except IntegrityError as e:
-            raise DBPlayerAlreadyInRoundException()
+            raise DBObjectAlreadyExists("Player in round")
 
     @database_response
     def get_players_in_round(self, username, tournament_name, round_name):
         tournament = self.get_tournament(username, tournament_name)
         round_obj = self.get_round(round_name, tournament.id)
         if round_obj is None:
-            raise DBRoundNotFoundException()
+            raise DBObjectNotFound("Round")
         return [entities.player.Player(dbu=p).to_base_info_dict() for p in
                 self.db.session.query(self.models.Round).filter_by(id=round_obj.id).first().players]
 
@@ -217,16 +222,16 @@ class DBManager:
         tournament = self.get_tournament(username, tournament_name)  # FIXME: Duplicated code!
         round_obj = self.get_round(round_name, tournament.id)
         if round_obj is None:
-            raise DBRoundNotFoundException()
+            raise DBObjectNotFound("Round")
         player_obj = self.models.Player.query.filter_by(id=pair_id).first()
         if player_obj is None:
-            raise DBPlayerNotFoundException()
+            raise DBObjectNotFound("Player")
         try:
             round_obj.players.remove(player_obj)
             self.db.session.add(round_obj)
             self.db.session.commit()
         except IntegrityError as e:
-            raise DBPlayerNotInRoundException()
+            raise DBObjectNotFound("Player in round")
 
     @database_response
     def clear_all_tables(self):
@@ -253,7 +258,7 @@ class DBManager:
         tournament = self.models.Tournament.query.filter((
                 (self.models.Tournament.user_id == u.id) & (self.models.Tournament.name == tournament_name))).first()
         if tournament is None:
-            raise DBTournamentNotOwnedException()
+            raise DBObjectNotFound("Tournament")
         return tournament
 
     def is_word_in_table(self, word_text, tournament_id):
