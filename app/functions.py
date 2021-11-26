@@ -32,6 +32,7 @@ class Response:  # FIXME: Exists an actual Flask.Response object!
         return str(json.dumps({"data": self.data}))
 
 
+# FIXME: Now this thing handles all the exceptions
 def function_response(result_function):
     """
     :param result_function: function to wrap, have to return code (Int) and data (JSON)
@@ -49,14 +50,13 @@ def function_response(result_function):
             code, data = result_function(*args, **kwargs)
         except DBException as e:
             code = e.code
-            data = json.dumps({"error": str(e), "stack": full_stack()})
-            print("DBException:", e)
-        # except GameException as e:
-        #     code = 410
-        #     data = json.dumps({"Error": str(e), "Stack": full_stack()})
-        #     print("GameException:", e)
+            if code != 699:
+                data = json.dumps({"Message": e.message})
+            else:
+                data = json.dumps({"Error": str(e), "Stack": full_stack()})
+                print("DBException:", e)
         except Exception as e:
-            data = json.dumps({"error": str(e), "stack": full_stack()})
+            data = json.dumps({"Error": str(e), "Stack": full_stack()})
             print(e)
         return str(Response(code, data)), code
 
@@ -66,15 +66,13 @@ def function_response(result_function):
 def token_auth(token):
     """
     :param token: user token, string
-    :return: -1, if no such token exists or if the token is outdated, username otherwise
+    :return: username, if token exists and the token is not outdated, otherwise throws DBObjectNotFound("Token")
     """
-    try:
-        username, exp_time = dbm.get_username_and_exptime_by_token(token)
-    except DBObjectNotFound:
-        return -1
+    username, exp_time = dbm.get_username_and_exptime_by_token(token)
+
     if exp_time < datetime.datetime.utcnow():
         dbm.delete_token(token)
-        return -1
+        raise DBObjectNotFound("Token")  # TODO: seems not good, I guess
     return username
 
 
@@ -97,24 +95,19 @@ def login(username, password):
     :param username: not empty, should be real username
     :param password: not empty, should be user's password
     :return: 404, {} if there is no user with such credentials; 200, {'Token': <token>} if there is
-    Can throw DBException, but shouldn't
+    Throws exceptions, but they are handled in wrapper
     """
-    try:
-        u_hash = dbm.get_passhash_by_username(username)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
+
+    u_hash = dbm.get_passhash_by_username(username)
 
     if not check_password(password, u_hash):
-        code = 404
-        data = json.dumps({"Message": "User not found"})
-        return code, data
+        raise DBObjectNotFound("User")
 
     tok_uuid, tok_exp = gen_token()
     dbm.insert_token_to_username(tok_uuid, tok_exp, username)
     code = 200
     data = json.dumps({'Token': tok_uuid})
+
     return code, data
 
 
@@ -124,21 +117,14 @@ def register(username, password):
     :param username: new username, should be unique and consist only of allowed characters
     :param password: password, should be strong
     :return: 200, {} if success; 400, {} if username is already in use
-    Can throw DBException, but shouldn't
+    Throws exceptions, but they are handled in wrapper
     TODO: add password check
     TODO: add allowed characters list and verification
     """
     pass_hash = encrypt_password(password)
-    try:
-        dbm.insert_user(User(username=username), pass_hash)
-    except DBObjectAlreadyExists as e:
-        code = 400
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.insert_user(User(username=username), pass_hash)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -147,18 +133,10 @@ def new_tournament(token, tournament_name):
     :param token: session token
     :param tournament_name: name of new tournament to create
     :return: 200, {} if success; 403, {} if token is invalid
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.insert_tournament(Tournament(name=tournament_name), username)
-    except DBObjectAlreadyExists as e:
-        code = 400
-        data = json.dumps({"Message": e.message})
-        return code, data
+    dbm.insert_tournament(Tournament(name=tournament_name), username)
     return 200, json.dumps({})
 
 
@@ -167,13 +145,11 @@ def get_tournaments(token):
     """
     :param token: session token
     :return: 200, {"tournaments": <list of tournaments>} if success; 403, {} if token is invalid
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
     tournaments = dbm.get_tournaments(username)
+
     return 200, json.dumps({"Tournaments": tournaments})
 
 
@@ -185,26 +161,12 @@ def new_player(token, tournament_name, name_first, name_second):
     :param name_first: name of the first player in pair
     :param name_second: name of the second player in pair
     :return: 200, {} on success; 400, {} if one of players is already in tournament, 403, {} is not owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.insert_player(username, tournament_name, name_first, name_second)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBObjectAlreadyExists as e:
-        code = 400
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.insert_player(username, tournament_name, name_first, name_second)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -213,18 +175,11 @@ def get_players(token, tournament_name):
     :param token: session token
     :param tournament_name: name of the tournament to which the players will be added
     :return: 200, {"Players": <list of players>} on success; 403, {} if not the owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        players = dbm.get_players(username, tournament_name)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
+    players = dbm.get_players(username, tournament_name)
+
     return 200, json.dumps({"Players": players})
 
 
@@ -236,22 +191,12 @@ def delete_player(token, tournament_name, name_first, name_second):
     :param name_first: name of the first player in pair
     :param name_second: name of the second player in pair
     :return: 200, {} on success; 400, {} if no such pair in tournament, 403, {} is not owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.delete_player(username, tournament_name, name_first, name_second)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.delete_player(username, tournament_name, name_first, name_second)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -262,26 +207,12 @@ def new_word(token, tournament_name, word_text, word_difficulty):
     :param word_text: text of word
     :param word_difficulty: how difficult is it to explain the word
     :return: 200, {} on success; 400, {} if the word is already in tournament, 403, {} is not owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.insert_word(username, tournament_name, word_text, word_difficulty)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBObjectAlreadyExists as e:
-        code = 400
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.insert_word(username, tournament_name, word_text, word_difficulty)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -290,18 +221,11 @@ def get_words(token, tournament_name):
     :param token: session token
     :param tournament_name: name of the tournament
     :return: 200, {"Words": <list of words>} on success; 403, {} if not the owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        words = dbm.get_words(username, tournament_name)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
+    words = dbm.get_words(username, tournament_name)
+
     return 200, json.dumps({"Words": words})
 
 
@@ -312,22 +236,12 @@ def delete_word(token, tournament_name, word_text):
     :param tournament_name: name of the tournament to which the players will be added
     :param word_text: word
     :return: 200, {} on success; 400, {} if no such word in tournament, 403, {} if not owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.delete_word(username, tournament_name, word_text)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.delete_word(username, tournament_name, word_text)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -338,26 +252,12 @@ def new_round(token, tournament_name, round_name, round_difficulty):
     :param round_name: name of the round
     :param round_difficulty: expected difficulty of the round
     :return: 200, {} on success; 400, {} if round with same name is already in tournament; 403, {} if not owner
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.insert_round(username, tournament_name, round_name, round_difficulty)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBObjectAlreadyExists as e:
-        code = 400
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.insert_round(username, tournament_name, round_name, round_difficulty)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -368,16 +268,8 @@ def get_rounds(token, tournament_name):
     :return: 200, {"Rounds": <list of rounds>} on success; 403, {} if not the owner
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        rounds = dbm.get_rounds(username, tournament_name)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
+    rounds = dbm.get_rounds(username, tournament_name)
+
     return 200, json.dumps({"Rounds": rounds})
 
 
@@ -390,20 +282,9 @@ def delete_round(token, tournament_name, round_name):
     :return: 200, {} on success; 400, {} if no such round in tournament, 403, {} if not owner of tournament
     """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.delete_round(username, tournament_name, round_name)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.delete_round(username, tournament_name, round_name)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -416,26 +297,10 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
     :return: 200, {} on success; 400, {} if the pair is already in the round;
     404, {} if no such pair or round; 403, {} if not owner
     """
-
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.add_pair_id_to_round(username, tournament_name, round_name, pair_id)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    except DBObjectAlreadyExists as e:
-        code = 400
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+    dbm.add_pair_id_to_round(username, tournament_name, round_name, pair_id)
+
+    return 200, json.dumps({})
 
 
 @function_response
@@ -448,16 +313,8 @@ def get_players_in_round(token, tournament_name, round_name):
         404, {} if no such round; 403, {} if not owner
         """
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        players = dbm.get_players_in_round(username, tournament_name, round_name)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
+    players = dbm.get_players_in_round(username, tournament_name, round_name)
+
     return 200, json.dumps({"Players": players})
 
 
@@ -471,22 +328,10 @@ def delete_player_from_round(token, tournament_name, round_name, pair_id):
     :return: 200, {} on success; 400, {} if the pair is not in the round;
     404, {} if no such pair or round; 403, {} if not owner
     """
-
     username = token_auth(token)
-    if username == -1:
-        code = 403
-        data = json.dumps({"Message": "Invalid/Outdated token"})
-        return code, data
-    try:
-        dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
-    except DBObjectNotFound as e:
-        code = 404
-        data = json.dumps({"Message": e.message})
-        return code, data
-    finally:
-        code = 200
-        data = json.dumps({})
-    return code, data
+
+    dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
+    return 200, json.dumps({})
 
 
 @function_response
@@ -497,6 +342,6 @@ def drop_tables(secret_code):
     200, {} if everything is dropped and recreated successfully
     """
     if secret_code != Config.ADMIN_SECRET:
-        return 403, json.dumps({})
+        return 404, json.dumps({})
     dbm.clear_all_tables()
     return 200, json.dumps({})

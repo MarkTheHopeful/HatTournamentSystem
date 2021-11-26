@@ -12,9 +12,9 @@ class DBException(Exception):
 
 class DBObjectNotFound(DBException):
     def __init__(self, object_name):
-        super(DBObjectNotFound, self).__init__(601, f"{object_name} not found")
+        super(DBObjectNotFound, self).__init__(404, f"{object_name} not found")
 
 
 class DBObjectAlreadyExists(DBException):
     def __init__(self, object_name):
-        super(DBObjectAlreadyExists, self).__init__(602, f"{object_name} is already exists")
+        super(DBObjectAlreadyExists, self).__init__(400, f"{object_name} is already exists")
