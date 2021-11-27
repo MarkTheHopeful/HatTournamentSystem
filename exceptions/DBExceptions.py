@@ -1,10 +1,11 @@
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import StaleDataError
 
 
 class DBException(Exception):
-    code = 699
+    code = 500
 
-    def __init__(self, code=699, message="Unknown DB error"):
+    def __init__(self, code=500, message="Unknown DB error"):
         self.code = code
         self.message = message
         super(DBException, self).__init__(message)

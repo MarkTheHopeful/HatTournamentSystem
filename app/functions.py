@@ -49,12 +49,12 @@ def function_response(result_function):
         try:
             code, data = result_function(*args, **kwargs)
         except DBException as e:
-            code = e.code
-            if code != 699:
+            if e.code != 699:
                 data = json.dumps({"Message": e.message})
             else:
                 data = json.dumps({"Error": str(e), "Stack": full_stack()})
                 print("DBException:", e)
+            e.code = code
         except Exception as e:
             data = json.dumps({"Error": str(e), "Stack": full_stack()})
             print(e)
