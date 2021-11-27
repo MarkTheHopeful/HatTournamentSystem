@@ -98,13 +98,13 @@ def login(username, password):
     Throws exceptions, but they are handled in wrapper
     """
 
-    u_hash = dbm.get_password_hash_by_username(username)
+    u_hash = dbm.get_password_hash(username)
 
     if not check_password(password, u_hash):
         raise DBObjectNotFound("User")
 
     tok_uuid, tok_exp = gen_token()
-    dbm.insert_token_to_username(tok_uuid, tok_exp, username)
+    dbm.insert_token(tok_uuid, tok_exp, username)
     code = 200
     data = json.dumps({'Token': tok_uuid})
 
@@ -136,7 +136,7 @@ def new_tournament(token, tournament_name):
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.insert_tournament(Tournament(name=tournament_name), username)
+    dbm.insert_tournament(username, Tournament(name=tournament_name))
     return 200, json.dumps({})
 
 
