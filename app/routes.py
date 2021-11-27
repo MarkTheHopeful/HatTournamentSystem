@@ -159,6 +159,14 @@ def add_player_to_subround(tournament_name):
     return functions.add_player_to_subround(token, tournament_name, round_name, subround_name, pair_id)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/player', methods=['GET'])
+def get_players_from_subround(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    return functions.get_players_in_subround(token, tournament_name, round_name, subround_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

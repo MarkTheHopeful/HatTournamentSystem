@@ -320,6 +320,12 @@ class DBManager:
             raise DBObjectAlreadyExists("Player in subround")
 
     @database_response
+    def get_players_in_subround(self, username, tournament_name, round_name, subround_name):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        return [entities.player.Player(dbu=p).to_base_info_dict() for p in
+                self.db.session.query(self.models.Subround).filter_by(id=subround_obj.id).first().players]
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

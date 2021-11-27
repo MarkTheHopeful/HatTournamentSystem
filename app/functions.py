@@ -295,8 +295,7 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
     :param tournament_name: name of the tournament to interact with
     :param round_name: name of the round to interact with
     :param pair_id: id of the pair (player) to add into round
-    :return: 200, {} on success; 400, {} if the pair is already in the round;
-    404, {} if no such pair or round; 403, {} if not owner
+    :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
@@ -311,8 +310,8 @@ def get_players_in_round(token, tournament_name, round_name):
     :param token: session token
     :param tournament_name: name of the tournament to interact with
     :param round_name: name of the round from which take players
-    :return: 200, {"Players":<list of players in round>} on success;
-    404, {} if no such round; 403, {} if not owner
+    :return: 200, {"Players":<list of players in round>} on success; errors on error
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
     players = dbm.get_players_in_round(username, tournament_name, round_name)
@@ -327,8 +326,8 @@ def delete_player_from_round(token, tournament_name, round_name, pair_id):
     :param tournament_name: name of the tournament to interact with
     :param round_name: name of the round to interact with
     :param pair_id: id of the pair (player) to delete from round
-    :return: 200, {} on success; 400, {} if the pair is not in the round;
-    404, {} if no such pair or round; 403, {} if not owner
+    :return: 200, {} on success; errors on error
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
@@ -344,6 +343,7 @@ def new_subround(token, tournament_name, round_name, subround_name):
     :param round_name: name of the round to interact with
     :param subround_name: name of new subround
     :return: 200, {"Id": <id>} on success, errors on error.
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
@@ -358,6 +358,7 @@ def get_subrounds(token, tournament_name, round_name):
     :param tournament_name: name of the tournament to interact with
     :param round_name: name of the round to interact with
     :return: 200, {"Subrounds": <list of subrounds>} on success, errors on error.
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
@@ -372,6 +373,7 @@ def delete_subround(token, tournament_name, round_name, subround_name):
     :param round_name: name of the round to interact with
     :param subround_name: name of the subround to delete
     :return: 200, {} on success, errors on error.
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
     dbm.delete_subround(username, tournament_name, round_name, subround_name)
@@ -387,14 +389,28 @@ def add_player_to_subround(token, tournament_name, round_name, subround_name, pa
     :param round_name: name of the round to interact with
     :param subround_name: name of the subround to interact with
     :param pair_id: id of the pair (player) to add into round
-    :return: 200, {} on success; 400, {} if the pair is already in the round;
-    404, {} if no such pair or round; 403, {} if not owner
+    :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
     dbm.add_pair_id_to_subround(username, tournament_name, round_name, subround_name, pair_id)
 
     return 200, json.dumps({})
+
+
+@function_response
+def get_players_in_subround(token, tournament_name, round_name, subround_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round from which take players
+    :param subround_name: name of the subround from which take players
+    :return: 200, {"Players":<list of players in round>} on success,
+    """
+    username = token_auth(token)
+    players = dbm.get_players_in_subround(username, tournament_name, round_name, subround_name)
+
+    return 200, json.dumps({"Players": players})
 
 
 @function_response
