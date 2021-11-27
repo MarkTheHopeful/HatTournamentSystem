@@ -36,6 +36,10 @@ players_in_rounds = Table("players_in_rounds", db.Model.metadata,
                           db.Column("player_id", db.Integer, db.ForeignKey('player.id'), primary_key=True),
                           db.Column("round_id", db.Integer, db.ForeignKey('round.id'), primary_key=True))
 
+players_in_subrounds = Table("players_in_subrounds", db.Model.metadata,
+                             db.Column("player_id", db.Integer, db.ForeignKey('player.id'), primary_key=True),
+                             db.Column("subround_id", db.Integer, db.ForeignKey('subround.id'), primary_key=True))
+
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -47,14 +51,21 @@ class Round(db.Model):
         secondary=players_in_rounds,
         back_populates="rounds",
         lazy='dynamic')
-    # subrounds = db.relationship('Subround', backref='round', lazy='dynamic')
+    subrounds = db.relationship('Subround', backref='round', lazy='dynamic')
 
 
-# class Subround(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     round_id = db.Column(db.Integer, db.ForeignKey('round.id'))
-#
-#
+class Subround(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, index=True)
+    round_id = db.Column(db.Integer, db.ForeignKey('round.id'))
+    players = db.relationship(
+        "Player",
+        secondary=players_in_subrounds,
+        back_populates="subrounds",
+        lazy='dynamic'
+    )
+
+
 # class Game(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
 
@@ -67,6 +78,12 @@ class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postpo
     rounds = db.relationship(
         "Round",
         secondary=players_in_rounds,
+        back_populates="players",
+        lazy='dynamic'
+    )
+    subrounds = db.relationship(
+        "Subround",
+        secondary=players_in_subrounds,
         back_populates="players",
         lazy='dynamic'
     )

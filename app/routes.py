@@ -88,7 +88,7 @@ def delete_word(tournament_name):
 def new_round(tournament_name):
     token: str = request.get_json()["token"]
     round_name: str = request.get_json()["round_name"]
-    round_difficulty: int = int(request.get_json()["round_difficulty"])
+    round_difficulty: int = int(request.get_json()["round_difficulty"])  # TODO: seems redundant
     return functions.new_round(token, tournament_name, round_name, round_difficulty)
 
 
@@ -126,6 +126,14 @@ def delete_player_from_round(tournament_name):
     round_name: str = request.get_json()["round_name"]
     pair_id: int = int(request.get_json()["player_id"])  # FIXME: Actually, you have no way to get player_id
     return functions.delete_player_from_round(token, tournament_name, round_name, pair_id)
+
+
+@app.route('/api/v1/tournament/<tournament_name>/subrounds', methods=['POST'])
+def new_subround(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    return functions.new_subround(token, tournament_name, round_name, subround_name)
 
 
 @app.route('/api/v1/admin/drop', methods=['DELETE'])

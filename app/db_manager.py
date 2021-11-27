@@ -123,6 +123,12 @@ class DBManager:
             raise DBObjectNotFound("Word")
         return w
 
+    def is_subround_exists(self, username, tournament_name, round_name, subround_name):
+        r = self.get_round(username, tournament_name, round_name)
+        s = self.models.Subround.query.filter((self.models.Subround.name == subround_name) & (
+                self.models.Subround.round_id == r.id)).first()
+        return s is not None
+
     # DATABASE RESPONSES
 
     @database_response
@@ -270,6 +276,17 @@ class DBManager:
             self.db.session.commit()
         except StaleDataError as e:
             raise DBObjectNotFound("Player in round")
+
+    @database_response
+    def insert_subround(self, username, tournament_name, round_name, subround_name):
+        if self.is_subround_exists(username, tournament_name, round_name, subround_name):
+            raise DBObjectAlreadyExists("Subround")
+
+        round_obj = self.get_round(username, tournament_name, round_name)
+        new_subround = self.models.Subround(name=subround_name, round=round_obj)
+        self.db.session.add(new_subround)
+        self.db.session.commit()
+        return new_subround.id
 
     @database_response
     def clear_all_tables(self):

@@ -1,10 +1,10 @@
 # There the functions are being implemented.
 # Then the routes.py will use them
 # The functions always produce output as JSON
-# The format is: {code: CODE, state: STATE, data: {JSON}}, where code is the status code
+# The format is: {code: CODE, state: STATE, data: {JSON}}, where code is the status code    # FIXME: outdated
 # State is the description of the code
 # And the data is the product, which the function returns
-# FIXME: the file is too bloated! Should add more decorators to remove repetition
+# TODO: update documentation
 
 
 import json
@@ -12,7 +12,7 @@ import datetime
 from app.extensions import dbm
 from utils.encrypt import encrypt_password, check_password
 from config import Config
-from exceptions.DBExceptions import DBException, DBObjectNotFound, DBObjectAlreadyExists
+from exceptions.DBExceptions import DBException, DBObjectNotFound
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -266,6 +266,7 @@ def get_rounds(token, tournament_name):
     :param token: session token
     :param tournament_name: name of the tournament
     :return: 200, {"Rounds": <list of rounds>} on success; 403, {} if not the owner
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
     rounds = dbm.get_rounds(username, tournament_name)
@@ -280,6 +281,7 @@ def delete_round(token, tournament_name, round_name):
     :param tournament_name: name of the tournament from which the round will be deleted
     :param round_name: name of the round to delete
     :return: 200, {} on success; 400, {} if no such round in tournament, 403, {} if not owner of tournament
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
     dbm.delete_round(username, tournament_name, round_name)
@@ -296,6 +298,7 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
     :param pair_id: id of the pair (player) to add into round
     :return: 200, {} on success; 400, {} if the pair is already in the round;
     404, {} if no such pair or round; 403, {} if not owner
+    Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
     dbm.add_pair_id_to_round(username, tournament_name, round_name, pair_id)
@@ -306,12 +309,12 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
 @function_response
 def get_players_in_round(token, tournament_name, round_name):
     """
-        :param token: session token
-        :param tournament_name: name of the tournament to interact with
-        :param round_name: name of the round from which take players
-        :return: 200, {"Players":<list of players in round>} on success;
-        404, {} if no such round; 403, {} if not owner
-        """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round from which take players
+    :return: 200, {"Players":<list of players in round>} on success;
+    404, {} if no such round; 403, {} if not owner
+    """
     username = token_auth(token)
     players = dbm.get_players_in_round(username, tournament_name, round_name)
 
@@ -332,6 +335,21 @@ def delete_player_from_round(token, tournament_name, round_name, pair_id):
 
     dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
     return 200, json.dumps({})
+
+
+@function_response
+def new_subround(token, tournament_name, round_name, subround_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :param subround_name: name of new subround
+    :return: 200, {"Id": <id>} on success, errors on error.
+    """
+    username = token_auth(token)
+
+    new_id = dbm.insert_subround(username, tournament_name, round_name, subround_name)
+    return 200, json.dumps({"Id": new_id})
 
 
 @function_response
