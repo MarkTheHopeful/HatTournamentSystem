@@ -326,6 +326,17 @@ class DBManager:
                 self.db.session.query(self.models.Subround).filter_by(id=subround_obj.id).first().players]
 
     @database_response
+    def delete_player_from_subround(self, username, tournament_name, round_name, subround_name, pair_id):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        player_obj = self.get_pair_by_id(pair_id)
+        try:
+            subround_obj.players.remove(player_obj)
+            self.db.session.add(subround_obj)
+            self.db.session.commit()
+        except StaleDataError as e:
+            raise DBObjectNotFound("Player in round")
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

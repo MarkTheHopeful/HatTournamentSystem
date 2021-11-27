@@ -414,6 +414,23 @@ def get_players_in_subround(token, tournament_name, round_name, subround_name):
 
 
 @function_response
+def delete_player_from_subround(token, tournament_name, round_name, subround_name, pair_id):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :param subround_name: name of the subround to interact with
+    :param pair_id: id of the pair (player) to delete from round
+    :return: 200, {} on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    dbm.delete_player_from_subround(username, tournament_name, round_name, subround_name, pair_id)
+    return 200, json.dumps({})
+
+
+@function_response
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
