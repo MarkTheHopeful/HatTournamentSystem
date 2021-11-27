@@ -16,6 +16,7 @@ from exceptions.DBExceptions import DBException, DBObjectNotFound
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
+from utils import template_data  # FIXME: DEBUG only
 
 
 class Response:  # FIXME: Exists an actual Flask.Response object!
@@ -440,4 +441,40 @@ def drop_tables(secret_code):
     if secret_code != Config.ADMIN_SECRET:
         return 404, json.dumps({})
     dbm.clear_all_tables()
+    return 200, json.dumps({})
+
+
+@function_response
+def fill_with_example(secret_code):
+    """
+    :param secret_code: admin secret from config
+    :return: 404, {} if the secret code is incorrect
+    200, {} if example fill executed successfully
+    May throw other exceptions
+    """
+    if secret_code != Config.ADMIN_SECRET:
+        return 404, json.dumps({})
+
+    example_username = template_data.EXAMPLE_USER[0]
+    dbm.insert_user(User(username=example_username), encrypt_password(template_data.EXAMPLE_USER[1]))
+
+    example_tournament = template_data.EXAMPLE_TOURNAMENT_NAME
+    dbm.insert_tournament(example_username, Tournament(name=example_tournament))
+
+    for round_name in template_data.EXAMPLE_ROUNDS_NAMES:
+        dbm.insert_round(example_username, example_tournament, round_name)
+
+    for subround_name, round_ind in template_data.EXAMPLE_SUBROUNDS:
+        dbm.insert_subround(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[round_ind],
+                            subround_name)
+
+    for word, diff in template_data.EXAMPLE_WORDS:
+        dbm.insert_word(example_username, example_tournament, word, diff)
+
+    for p1, p2, ri, sri, ind in template_data.EXAMPLE_PLAYERS:
+        dbm.insert_player(example_username, example_tournament, p1, p2)
+        dbm.add_pair_id_to_round(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[ri], ind)
+        dbm.add_pair_id_to_subround(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[ri],
+                                    template_data.EXAMPLE_SUBROUNDS[sri][0], ind)
+
     return 200, json.dumps({})

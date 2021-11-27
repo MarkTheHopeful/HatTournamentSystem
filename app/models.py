@@ -63,6 +63,7 @@ class Subround(db.Model):
         back_populates="subrounds",
         lazy='dynamic'
     )
+    words = db.relationship('Word', backref='subround', lazy='dynamic')
 
 
 # class Game(db.Model):
@@ -93,3 +94,4 @@ class Word(db.Model):
     text = db.Column(db.String, index=True, unique=True, nullable=False)
     difficulty = db.Column(db.Integer, index=True, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
+    subround_id = db.Column(db.Integer, db.ForeignKey('subround.id'))

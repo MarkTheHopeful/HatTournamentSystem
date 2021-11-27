@@ -1,7 +1,7 @@
 from entities.game import Game
 from entities.round_console import Round, Subround
 from entities.tournament_console import Tournament
-from utils.template_data import basic_players_names, basic_words_d
+from utils.template_data import EXAMPLE_PLAYERS, EXAMPLE_WORDS
 from typing import List, Optional
 from collections import Counter
 from typing import Counter as CounterT
@@ -16,7 +16,7 @@ add word
 delete word
 add players
 delete players
-template fill
+template fill (broken)
 add round
 add subround
 checkout round
@@ -77,9 +77,9 @@ if __name__ == "__main__":
             else:
                 print("Пары игроков нет в списке участников")
         elif command == "template fill":
-            for word, diff in basic_words_d:
+            for word, diff in EXAMPLE_WORDS:
                 current_tournament.add_word(word, diff)
-            for play_1, play_2 in basic_players_names:
+            for play_1, play_2 in EXAMPLE_PLAYERS:
                 current_tournament.add_play_pair(play_1, play_2)
             print("Добавлены слова и игроки для примера")
         elif command == "add round":

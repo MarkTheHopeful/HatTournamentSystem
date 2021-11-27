@@ -180,3 +180,9 @@ def delete_player_from_subround(tournament_name):
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]
     return functions.drop_tables(secret_code)
+
+
+@app.route('/api/v1/admin/fill_with_example', methods=['POST'])
+def fill_with_example():
+    secret_code: str = request.get_json()["secret_code"]
+    return functions.fill_with_example(secret_code)
