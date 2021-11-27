@@ -44,7 +44,6 @@ players_in_subrounds = Table("players_in_subrounds", db.Model.metadata,
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, index=True, nullable=False)
-    difficulty = db.Column(db.Integer, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
     players = db.relationship(
         "Player",

@@ -245,17 +245,16 @@ def delete_word(token, tournament_name, word_text):
 
 
 @function_response
-def new_round(token, tournament_name, round_name, round_difficulty):
+def new_round(token, tournament_name, round_name):
     """
     :param token: session token
     :param tournament_name: name of the tournament to add round
     :param round_name: name of the round
-    :param round_difficulty: expected difficulty of the round
     :return: 200, {} on success; 400, {} if round with same name is already in tournament; 403, {} if not owner
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    new_id = dbm.insert_round(username, tournament_name, round_name, round_difficulty)
+    new_id = dbm.insert_round(username, tournament_name, round_name)
 
     return 200, json.dumps({"Id": new_id})
 

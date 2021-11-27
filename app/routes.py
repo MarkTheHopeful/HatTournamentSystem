@@ -28,7 +28,7 @@ def register():
     return functions.register(username, password)
 
 
-@app.route('/api/v1/tournament/new', methods=['POST'])
+@app.route('/api/v1/tournament', methods=['POST'])
 def new_tournament():
     token: str = request.get_json()["token"]
     tournament_name: str = request.get_json()["name"]
@@ -88,8 +88,7 @@ def delete_word(tournament_name):
 def new_round(tournament_name):
     token: str = request.get_json()["token"]
     round_name: str = request.get_json()["round_name"]
-    round_difficulty: int = int(request.get_json()["round_difficulty"])  # TODO: seems redundant
-    return functions.new_round(token, tournament_name, round_name, round_difficulty)
+    return functions.new_round(token, tournament_name, round_name)
 
 
 @app.route('/api/v1/tournament/<tournament_name>/rounds', methods=['GET'])

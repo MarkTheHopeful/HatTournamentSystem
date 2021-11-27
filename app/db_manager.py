@@ -190,12 +190,12 @@ class DBManager:
         return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in u.tournaments]
 
     @database_response
-    def insert_round(self, username, tournament_name, round_name, round_difficulty):
+    def insert_round(self, username, tournament_name, round_name):
         if self.is_round_exists(username, tournament_name, round_name):
             raise DBObjectAlreadyExists("Round")
 
         tournament = self.get_tournament(username, tournament_name)
-        new_round = self.models.Round(name=round_name, difficulty=round_difficulty,
+        new_round = self.models.Round(name=round_name,
                                       tournament=tournament)
         self.db.session.add(new_round)
         self.db.session.commit()
