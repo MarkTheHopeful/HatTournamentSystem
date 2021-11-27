@@ -130,6 +130,14 @@ class DBManager:
                 self.models.Subround.round_id == r.id)).first()
         return s is not None
 
+    def get_subround(self, username, tournament_name, round_name, subround_name):
+        r = self.get_round(username, tournament_name, round_name)
+        s = self.models.Subround.query.filter((self.models.Subround.name == subround_name) & (
+                self.models.Subround.round_id == r.id)).first()
+        if s is None:
+            raise DBObjectNotFound("Subround")
+        return s
+
     # DATABASE RESPONSES
 
     @database_response
@@ -293,6 +301,12 @@ class DBManager:
     def get_subrounds(self, username, tournament_name, round_name):
         round_obj = self.get_round(username, tournament_name, round_name)
         return [SubroundE(dbu=p).to_base_info_dict() for p in round_obj.subrounds]
+
+    @database_response
+    def delete_subround(self, username, tournament_name, round_name, subround_name):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        self.db.session.delete(subround_obj)
+        self.db.session.commit()
 
     @database_response
     def clear_all_tables(self):

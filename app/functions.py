@@ -351,6 +351,7 @@ def new_subround(token, tournament_name, round_name, subround_name):
     new_id = dbm.insert_subround(username, tournament_name, round_name, subround_name)
     return 200, json.dumps({"Id": new_id})
 
+
 @function_response
 def get_subrounds(token, tournament_name, round_name):
     """
@@ -362,6 +363,22 @@ def get_subrounds(token, tournament_name, round_name):
     username = token_auth(token)
 
     return 200, json.dumps({"Subrounds": dbm.get_subrounds(username, tournament_name, round_name)})
+
+
+@function_response
+def delete_subround(token, tournament_name, round_name, subround_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :param subround_name: name of the subround to delete
+    :return: 200, {} on success, errors on error.
+    """
+    username = token_auth(token)
+
+    dbm.delete_subround(username, tournament_name, round_name, subround_name)
+
+    return 200, json.dumps({})
 
 
 @function_response
