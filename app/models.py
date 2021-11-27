@@ -5,8 +5,8 @@ from app.extensions import db
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, index=True, unique=True)
-    password_hash = db.Column(db.String)
+    username = db.Column(db.String, index=True, unique=True, nullable=False)
+    password_hash = db.Column(db.String, nullable=False)
     tokens = db.relationship('Token', backref='owner', lazy='dynamic')
     tournaments = db.relationship('Tournament', backref='owner', lazy='dynamic')
 
@@ -16,8 +16,8 @@ class User(db.Model):
 
 class Token(db.Model):
     id = db.Column(db.String, primary_key=True)
-    expires_in = db.Column(db.DateTime)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    expires_in = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
         return f'<Token {self.id} of user {self.user_id}>'
@@ -25,11 +25,11 @@ class Token(db.Model):
 
 class Tournament(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, index=True)
+    name = db.Column(db.String, index=True, nullable=False)
     players = db.relationship('Player', backref='tournament', lazy='dynamic')
     words = db.relationship('Word', backref='tournament', lazy='dynamic')
     rounds = db.relationship('Round', backref='tournament', lazy='dynamic')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
 players_in_rounds = Table("players_in_rounds", db.Model.metadata,
@@ -39,9 +39,9 @@ players_in_rounds = Table("players_in_rounds", db.Model.metadata,
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, index=True)
-    difficulty = db.Column(db.Integer)
-    tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'))
+    name = db.Column(db.String, index=True, nullable=False)
+    difficulty = db.Column(db.Integer, nullable=False)
+    tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
     players = db.relationship(
         "Player",
         secondary=players_in_rounds,
@@ -61,8 +61,8 @@ class Round(db.Model):
 
 class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postponed renaming
     id = db.Column(db.Integer, primary_key=True)
-    name_first = db.Column(db.String, index=True)
-    name_second = db.Column(db.String, index=True)
+    name_first = db.Column(db.String, index=True, nullable=False)
+    name_second = db.Column(db.String, index=True, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
     rounds = db.relationship(
         "Round",
@@ -74,6 +74,6 @@ class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postpo
 
 class Word(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String, index=True, unique=True)
-    difficulty = db.Column(db.Integer, index=True)
+    text = db.Column(db.String, index=True, unique=True, nullable=False)
+    difficulty = db.Column(db.Integer, index=True, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
