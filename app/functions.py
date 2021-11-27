@@ -136,8 +136,8 @@ def new_tournament(token, tournament_name):
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.insert_tournament(username, Tournament(name=tournament_name))
-    return 200, json.dumps({})
+    new_id = dbm.insert_tournament(username, Tournament(name=tournament_name))
+    return 200, json.dumps({"Id": new_id})
 
 
 @function_response
@@ -164,9 +164,9 @@ def new_player(token, tournament_name, name_first, name_second):
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.insert_player(username, tournament_name, name_first, name_second)
+    new_id = dbm.insert_player(username, tournament_name, name_first, name_second)
 
-    return 200, json.dumps({})
+    return 200, json.dumps({"Id": new_id})
 
 
 @function_response
@@ -210,9 +210,9 @@ def new_word(token, tournament_name, word_text, word_difficulty):
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.insert_word(username, tournament_name, word_text, word_difficulty)
+    new_id = dbm.insert_word(username, tournament_name, word_text, word_difficulty)
 
-    return 200, json.dumps({})
+    return 200, json.dumps({"Id": new_id})
 
 
 @function_response
@@ -255,9 +255,9 @@ def new_round(token, tournament_name, round_name, round_difficulty):
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.insert_round(username, tournament_name, round_name, round_difficulty)
+    new_id = dbm.insert_round(username, tournament_name, round_name, round_difficulty)
 
-    return 200, json.dumps({})
+    return 200, json.dumps({"Id": new_id})
 
 
 @function_response

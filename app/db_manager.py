@@ -167,6 +167,7 @@ class DBManager:
         new_tournament = self.models.Tournament(name=tournament_obj.name, owner=u)
         self.db.session.add(new_tournament)
         self.db.session.commit()
+        return new_tournament.id
 
     @database_response
     def get_tournaments(self, username):
@@ -183,6 +184,7 @@ class DBManager:
                                       tournament=tournament)
         self.db.session.add(new_round)
         self.db.session.commit()
+        return new_round.id
 
     @database_response
     def get_rounds(self, username, tournament_name):
@@ -205,6 +207,7 @@ class DBManager:
         new_player = self.models.Player(name_first=name_first, name_second=name_second, tournament=tournament)
         self.db.session.add(new_player)
         self.db.session.commit()
+        return new_player.id
 
     @database_response
     def get_players(self, username, tournament_name):
@@ -227,6 +230,7 @@ class DBManager:
         new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament)
         self.db.session.add(new_word)
         self.db.session.commit()
+        return new_word.id
 
     @database_response
     def get_words(self, username, tournament_name):
