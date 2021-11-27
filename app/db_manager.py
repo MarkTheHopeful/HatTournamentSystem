@@ -3,6 +3,7 @@ import entities.tournament
 import entities.player
 import entities.word
 import entities.round
+from entities.subround import Subround as SubroundE  # FIXME: differs for weird reasons
 
 
 # FIXME: too many duplicated lines!
@@ -287,6 +288,11 @@ class DBManager:
         self.db.session.add(new_subround)
         self.db.session.commit()
         return new_subround.id
+
+    @database_response
+    def get_subrounds(self, username, tournament_name, round_name):
+        round_obj = self.get_round(username, tournament_name, round_name)
+        return [SubroundE(dbu=p).to_base_info_dict() for p in round_obj.subrounds]
 
     @database_response
     def clear_all_tables(self):

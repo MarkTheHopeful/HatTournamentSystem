@@ -351,6 +351,18 @@ def new_subround(token, tournament_name, round_name, subround_name):
     new_id = dbm.insert_subround(username, tournament_name, round_name, subround_name)
     return 200, json.dumps({"Id": new_id})
 
+@function_response
+def get_subrounds(token, tournament_name, round_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :return: 200, {"Subrounds": <list of subrounds>} on success, errors on error.
+    """
+    username = token_auth(token)
+
+    return 200, json.dumps({"Subrounds": dbm.get_subrounds(username, tournament_name, round_name)})
+
 
 @function_response
 def drop_tables(secret_code):
