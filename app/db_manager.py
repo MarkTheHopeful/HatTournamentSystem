@@ -309,6 +309,17 @@ class DBManager:
         self.db.session.commit()
 
     @database_response
+    def add_pair_id_to_subround(self, username, tournament_name, round_name, subround_name, pair_id):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        player_obj = self.get_pair_by_id(pair_id)
+        try:  # FIXME: Find some better way to check
+            subround_obj.players.append(player_obj)
+            self.db.session.add(subround_obj)
+            self.db.session.commit()
+        except IntegrityError as e:
+            raise DBObjectAlreadyExists("Player in subround")
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

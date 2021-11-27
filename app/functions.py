@@ -374,8 +374,25 @@ def delete_subround(token, tournament_name, round_name, subround_name):
     :return: 200, {} on success, errors on error.
     """
     username = token_auth(token)
-
     dbm.delete_subround(username, tournament_name, round_name, subround_name)
+
+    return 200, json.dumps({})
+
+
+@function_response
+def add_player_to_subround(token, tournament_name, round_name, subround_name, pair_id):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :param subround_name: name of the subround to interact with
+    :param pair_id: id of the pair (player) to add into round
+    :return: 200, {} on success; 400, {} if the pair is already in the round;
+    404, {} if no such pair or round; 403, {} if not owner
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+    dbm.add_pair_id_to_subround(username, tournament_name, round_name, subround_name, pair_id)
 
     return 200, json.dumps({})
 
