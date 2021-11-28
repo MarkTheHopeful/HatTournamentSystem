@@ -149,7 +149,9 @@ class DBManager:
         return words
 
     def link_words_with_subround(self, subround_obj, words_list):
-        pass
+        subround_obj.words.extend(words_list)
+        self.db.session.add(subround_obj)
+        self.db.session.commit()
 
     # DATABASE RESPONSES
 
