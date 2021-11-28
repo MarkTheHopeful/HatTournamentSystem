@@ -176,6 +176,17 @@ def delete_player_from_subround(tournament_name):
     return functions.delete_player_from_subround(token, tournament_name, round_name, subround_name, pair_id)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/words', methods=['POST'])
+def add_x_words_of_diff_y_to_subround(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    words_difficulty: int = int(request.get_json()["words_difficulty"])
+    words_amount: int = int(request.get_json()["words_amount"])
+    return functions.add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subround_name,
+                                                       words_difficulty, words_amount)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

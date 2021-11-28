@@ -5,8 +5,9 @@ import entities.word
 import entities.round
 from entities.subround import Subround as SubroundE  # FIXME: differs for weird reasons
 
-
 # FIXME: too many duplicated lines!
+from utils.utils import gen_rand_key
+
 
 def database_response(database_fun):  # FIXME: Seems useless
     def wrapped(*args, **kwargs):
@@ -138,6 +139,18 @@ class DBManager:
             raise DBObjectNotFound("Subround")
         return s
 
+    def get_x_random_words_with_difficulty_y(self, username, tournament_name, amount, difficulty):
+        t = self.get_tournament(username, tournament_name)
+        words = self.models.Word.query.filter_by(tournament_id=t.id, difficulty=difficulty, subround_id=None).order_by(
+            self.models.Word.random_seed).limit(amount).all()
+
+        if len(words) < amount:
+            raise DBObjectNotFound("Not enough words")
+        return words
+
+    def link_words_with_subround(self, subround_obj, words_list):
+        pass
+
     # DATABASE RESPONSES
 
     @database_response
@@ -242,7 +255,8 @@ class DBManager:
             raise DBObjectAlreadyExists("Word")
 
         tournament = self.get_tournament(username, tournament_name)
-        new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament)
+        new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament,
+                                    random_seed=gen_rand_key(), is_taken=False)
         self.db.session.add(new_word)
         self.db.session.commit()
         return new_word.id
@@ -335,6 +349,13 @@ class DBManager:
             self.db.session.commit()
         except StaleDataError as e:
             raise DBObjectNotFound("Player in round")
+
+    @database_response
+    def add_x_words_of_diff_y_to_subround(self, username, tournament_name, round_name, subround_name, words_difficulty,
+                                          words_amount):
+        words = self.get_x_random_words_with_difficulty_y(username, tournament_name, words_amount, words_difficulty)
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        self.link_words_with_subround(subround_obj, words)
 
     @database_response
     def clear_all_tables(self):

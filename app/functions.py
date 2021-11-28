@@ -432,6 +432,26 @@ def delete_player_from_subround(token, tournament_name, round_name, subround_nam
 
 
 @function_response
+def add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subround_name,
+                                      words_difficulty, words_amount):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name of the round to interact with
+    :param subround_name: name of the subround to interact with
+    :param words_difficulty: difficulty of words to add
+    :param words_amount: amount of words to add
+    :return: 200, {} if added, errors if error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    dbm.add_x_words_of_diff_y_to_subround(username, tournament_name, round_name, subround_name, words_difficulty,
+                                          words_amount)
+    return 200, json.dumps({})
+
+
+@function_response
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config

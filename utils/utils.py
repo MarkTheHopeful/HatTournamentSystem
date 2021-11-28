@@ -45,6 +45,10 @@ def split_into_near_equal_parts(items: List[Any], amount: int) -> List[List[Any]
     return result
 
 
+def gen_rand_key():
+    return random.randint(-Config.RANDOM_BORDER, Config.RANDOM_BORDER)
+
+
 def str_list(items: List[Any], prefix: str = "", separator: str = "\n", suffix: str = "") -> str:
     return prefix + separator.join([str(item) for item in items]) + suffix
 

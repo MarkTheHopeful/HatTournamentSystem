@@ -95,3 +95,5 @@ class Word(db.Model):
     difficulty = db.Column(db.Integer, index=True, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
     subround_id = db.Column(db.Integer, db.ForeignKey('subround.id'))
+    random_seed = db.Column(db.Integer, index=True,  nullable=False)
+    is_taken = db.Column(db.Boolean, index=True, nullable=False)
