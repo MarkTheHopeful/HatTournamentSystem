@@ -187,6 +187,14 @@ def add_x_words_of_diff_y_to_subround(tournament_name):
                                                        words_difficulty, words_amount)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/words', methods=['GET'])
+def get_subround_words(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    return functions.get_subround_words(token, tournament_name, round_name, subround_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

@@ -360,6 +360,11 @@ class DBManager:
         self.link_words_with_subround(subround_obj, words)
 
     @database_response
+    def get_subround_words(self, username, tournament_name, round_name, subround_name):
+        s = self.get_subround(username, tournament_name, round_name, subround_name)
+        return [entities.word.Word(dbu=w).to_base_info_dict() for w in s.words]
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

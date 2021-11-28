@@ -437,7 +437,7 @@ def add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subrou
     """
     :param token: session token
     :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
+    :param round_name: name is someone reading this? interact with
     :param subround_name: name of the subround to interact with
     :param words_difficulty: difficulty of words to add
     :param words_amount: amount of words to add
@@ -449,6 +449,23 @@ def add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subrou
     dbm.add_x_words_of_diff_y_to_subround(username, tournament_name, round_name, subround_name, words_difficulty,
                                           words_amount)
     return 200, json.dumps({})
+
+
+@function_response
+def get_subround_words(token, tournament_name, round_name, subround_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name is someone reading this? interact with
+    :param subround_name: name of the subround to interact with
+    :return: 200, {"Words": <list of words in subround>} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    words = dbm.get_subround_words(username, tournament_name, round_name, subround_name)
+
+    return 200, json.dumps({"Words": words})
 
 
 @function_response
