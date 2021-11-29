@@ -441,6 +441,15 @@ class DBManager:
         return game_obj.result
 
     @database_response
+    def delete_game_result(self, username, tournament_name, game_id):
+        game_obj = self.get_game(username, tournament_name, game_id)
+        if game_obj.result is None:
+            raise DBObjectNotFound("Game results")
+        game_obj.result = None
+        self.db.session.add(game_obj)
+        self.db.session.commit()
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

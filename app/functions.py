@@ -574,6 +574,22 @@ def get_game_result(token, tournament_name, game_id):
 
 
 @function_response
+def delete_game_result(token, tournament_name, game_id):
+    """
+       :param token: session token
+       :param tournament_name: name of the tournament to interact with
+       :param game_id: id of game which information to get
+       :return: 200, {} on success, errors on error
+       Throws exceptions, but they are handled in wrapper
+       """
+    username = token_auth(token)
+
+    dbm.delete_game_result(username, tournament_name, game_id)
+
+    return 200, json.dumps({})
+
+
+@function_response
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
