@@ -156,6 +156,15 @@ class DBManager:
         self.db.session.add(subround_obj)
         self.db.session.commit()
 
+    def get_game(self, username, tournament_name, game_id):
+        t = self.get_tournament(username, tournament_name)
+        g = self.models.Game.query.filter_by(id=game_id).first()
+
+        if g is None or g.subround.round.tournament.id != t.id:
+            raise DBObjectNotFound("Game")
+
+        return g
+
     # DATABASE RESPONSES
 
     @database_response
@@ -401,6 +410,11 @@ class DBManager:
         for game in subround_obj.games:
             self.db.session.delete(game)  # I believe in cascade delete
         self.db.session.commit()
+
+    @database_response
+    def get_game_players(self, username, tournament_name, game_id):
+        game_obj = self.get_game(username, tournament_name, game_id)
+        return [entities.player.Player(dbu=p).to_base_info_dict() for p in game_obj.players]
 
     @database_response
     def clear_all_tables(self):

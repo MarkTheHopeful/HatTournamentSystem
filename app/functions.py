@@ -525,6 +525,22 @@ def undo_split_subround_into_games(token, tournament_name, round_name, subround_
 
 
 @function_response
+def get_game_players(token, tournament_name, game_id):
+    """
+       :param token: session token
+       :param tournament_name: name of the tournament to interact with
+       :param game_id: id of game which information to get
+       :return: 200, {"Players": <list_of_players>} on success, errors on error
+       Throws exceptions, but they are handled in wrapper
+       """
+    username = token_auth(token)
+
+    players = dbm.get_game_players(username, tournament_name, game_id)
+
+    return 200, json.dumps({"Players": players})
+
+
+@function_response
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
