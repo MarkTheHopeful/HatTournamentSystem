@@ -252,6 +252,21 @@ def delete_game_result(tournament_name):
     return functions.delete_game_result(token, tournament_name, game_id)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/result', methods=['GET'])
+def get_subround_result(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    return functions.get_subround_result(token, tournament_name, round_name, subround_name)
+
+
+@app.route('/api/v1/tournament/<tournament_name>/rounds/result', methods=['GET'])
+def get_round_result(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    return functions.get_round_result(token, tournament_name, round_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

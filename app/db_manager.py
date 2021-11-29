@@ -480,6 +480,20 @@ class DBManager:
         self.db.session.commit()
 
     @database_response
+    def get_subround_result(self, username, tournament_name, round_name, subround_name):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        if subround_obj.result is None:
+            raise DBObjectNotFound("Game results")
+        return subround_obj.result
+
+    @database_response
+    def get_round_result(self, username, tournament_name, round_name):
+        round_obj = self.get_round(username, tournament_name, round_name)
+        if round_obj.result is None:
+            raise DBObjectNotFound("Game results")
+        return round_obj.result
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

@@ -590,6 +590,38 @@ def delete_game_result(token, tournament_name, game_id):
 
 
 @function_response
+def get_subround_result(token, tournament_name, round_name, subround_name):
+    """
+       :param token: session token
+       :param tournament_name: name of the tournament to interact with
+       :param round_name: name of round which information to get
+       :param subround_name: name of subround which information to get
+       :return: 200, {"Result": <dict Player_id : result>} on success, errors on error
+       Throws exceptions, but they are handled in wrapper
+       """
+    username = token_auth(token)
+
+    subround_result = dbm.get_subround_result(username, tournament_name, round_name, subround_name)
+
+    return 200, json.dumps({"Result": subround_result})
+
+@function_response
+def get_round_result(token, tournament_name, round_name):
+    """
+       :param token: session token
+       :param tournament_name: name of the tournament to interact with
+       :param round_name: name of round which information to get
+       :return: 200, {"Result": <dict Player_id : result>} on success, errors on error
+       Throws exceptions, but they are handled in wrapper
+       """
+    username = token_auth(token)
+
+    round_result = dbm.get_round_result(username, tournament_name, round_name)
+
+    return 200, json.dumps({"Result": round_result})
+
+
+@function_response
 def drop_tables(secret_code):
     """
     :param secret_code: admin secret from config
