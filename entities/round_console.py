@@ -2,8 +2,8 @@ import enum
 from typing import List
 from typing import Counter as CounterT
 from collections import Counter
-from entities.game import Game, GameStatus
-from utils.utils import split_into_near_equal_parts
+from entities.game_console import Game, GameStatus
+from utils.utils import shuffle_and_split_near_equal_parts
 from entities.word_console import WordBank
 
 
@@ -76,7 +76,7 @@ class Subround:
         if amount_of_games * 2 > len(self.participants_uid):
             return False
 
-        parts = split_into_near_equal_parts(self.participants_uid, amount_of_games)
+        parts = shuffle_and_split_near_equal_parts(self.participants_uid, amount_of_games)
         for part in parts:
             self.games.append(Game(part, self.words))
 

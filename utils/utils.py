@@ -8,16 +8,6 @@ import sys
 
 from config import Config
 
-SEPARATOR = '\t'
-
-
-def convert_array_to_string(array, sep=SEPARATOR, auto_type_caster=str):
-    return sep.join(map(auto_type_caster, array))
-
-
-def convert_string_to_array(string, sep=SEPARATOR, auto_type_caster=str):
-    return list(map(auto_type_caster, string.split(sep)))
-
 
 def full_stack():
     exc = sys.exc_info()[0]
@@ -36,16 +26,18 @@ def gen_token():
     return uuid.uuid4().hex, datetime.datetime.utcnow() + datetime.timedelta(seconds=Config.TOKEN_LIFETIME_SEC)
 
 
-def split_into_near_equal_parts(items: List[Any], amount: int) -> List[List[Any]]:
+def shuffle_and_split_near_equal_parts(items: List[Any], amount: int) -> List[List[Any]]:
     if amount > len(items):
         raise Exception("Not possible to split list to more parts, than the length of the list")
+    items_shuffled = list(items)
+    random.shuffle(items_shuffled)
     result = [[] for _ in range(amount)]
-    for i in range(len(items)):  # TODO: Probably, not the best solution
-        result[i % amount].append(items[i])
+    for i in range(len(items_shuffled)):  # TODO: Probably, not the best solution
+        result[i % amount].append(items_shuffled[i])
     return result
 
 
-def gen_rand_key():
+def gen_rand_key() -> int:
     return random.randint(-Config.RANDOM_BORDER, Config.RANDOM_BORDER)
 
 

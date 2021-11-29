@@ -1,4 +1,5 @@
 from exceptions.DBExceptions import *
+from exceptions.LogicExceptions import *
 import entities.tournament
 import entities.player
 import entities.word
@@ -6,7 +7,7 @@ import entities.round
 from entities.subround import Subround as SubroundE  # FIXME: differs for weird reasons
 
 # FIXME: too many duplicated lines!
-from utils.utils import gen_rand_key
+from utils.utils import gen_rand_key, shuffle_and_split_near_equal_parts
 
 
 def database_response(database_fun):  # FIXME: Seems useless
@@ -14,6 +15,8 @@ def database_response(database_fun):  # FIXME: Seems useless
         try:
             result = database_fun(*args, **kwargs)
         except DBException as e:
+            raise e
+        except LogicException as e:  # FIXME: Probably shouldn't be handled here
             raise e
         except Exception as e:
             print("DB UNKNOWN::")  # FIXME: Possibly left here for some particular reason
@@ -363,6 +366,26 @@ class DBManager:
     def get_subround_words(self, username, tournament_name, round_name, subround_name):
         s = self.get_subround(username, tournament_name, round_name, subround_name)
         return [entities.word.Word(dbu=w).to_base_info_dict() for w in s.words]
+
+    @database_response
+    def split_subround_into_games(self, username, tournament_name, round_name, subround_name, games_amount):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        if subround_obj.games.count() > 0:
+            raise DBObjectAlreadyExists("Subround already split")
+        if subround_obj.players.count() < 2 * games_amount:
+            raise LogicGameSizeException()
+        players_parts = shuffle_and_split_near_equal_parts(subround_obj.players.all(),
+                                                           games_amount)  # FIXME: can be slow?
+        for players_part in players_parts:
+            new_game = self.models.Game(subround=subround_obj)
+            self.db.session.add(new_game)
+            self.db.session.commit()
+            for player in players_part:
+                player.games.append(new_game)
+                self.db.session.add(player)
+                self.db.session.commit()
+        final_ids = [game.id for game in subround_obj.games]
+        return final_ids
 
     @database_response
     def clear_all_tables(self):

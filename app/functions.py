@@ -10,6 +10,7 @@
 import json
 import datetime
 from app.extensions import dbm
+from exceptions.LogicExceptions import LogicException
 from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions.DBExceptions import DBException, DBObjectNotFound
@@ -56,6 +57,9 @@ def function_response(result_function):
                 data = json.dumps({"Error": str(e), "Stack": full_stack()})
                 print("DBException:", e)
             e.code = code
+        except LogicException as e:
+            code = e.code
+            data = json.dumps({"Message": e.message})
         except Exception as e:
             data = json.dumps({"Error": str(e), "Stack": full_stack()})
             print(e)
@@ -466,6 +470,24 @@ def get_subround_words(token, tournament_name, round_name, subround_name):
     words = dbm.get_subround_words(username, tournament_name, round_name, subround_name)
 
     return 200, json.dumps({"Words": words})
+
+
+@function_response
+def split_subround_into_games(token, tournament_name, round_name, subround_name, games_amount):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name is someone reading this? interact with
+    :param subround_name: name of the subround to interact with
+    :param games_amount: amount of games to split round into
+    :return: 200, {"Ids": <list of IDs of games>} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    games_ids = dbm.split_subround_into_games(username, tournament_name, round_name, subround_name, games_amount)
+
+    return 200, json.dumps({"Ids": games_ids})
 
 
 @function_response

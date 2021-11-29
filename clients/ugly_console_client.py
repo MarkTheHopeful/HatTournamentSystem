@@ -1,4 +1,4 @@
-from entities.game import Game
+from entities.game_console import Game
 from entities.round_console import Round, Subround
 from entities.tournament_console import Tournament
 from utils.template_data import EXAMPLE_PLAYERS, EXAMPLE_WORDS

@@ -195,6 +195,15 @@ def get_subround_words(tournament_name):
     return functions.get_subround_words(token, tournament_name, round_name, subround_name)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/games/split', methods=['POST'])
+def split_subround_into_games(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    games_amount: int = int(request.get_json()["games_amount"])
+    return functions.split_subround_into_games(token, tournament_name, round_name, subround_name, games_amount)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]
