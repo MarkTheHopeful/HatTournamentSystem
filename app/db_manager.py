@@ -258,7 +258,7 @@ class DBManager:
 
         tournament = self.get_tournament(username, tournament_name)
         new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament,
-                                    random_seed=gen_rand_key(), is_taken=False)
+                                    random_seed=gen_rand_key())
         self.db.session.add(new_word)
         self.db.session.commit()
         return new_word.id
