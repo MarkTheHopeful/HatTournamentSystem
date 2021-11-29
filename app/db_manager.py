@@ -156,6 +156,12 @@ class DBManager:
         self.db.session.add(subround_obj)
         self.db.session.commit()
 
+    def is_game_exists(self, username, tournament_name, game_id):
+        t = self.get_tournament(username, tournament_name)
+        g = self.models.Game.query.filter_by(id=game_id).first()
+
+        return g is not None and g.subround.round.tournament.id == t.id
+
     def get_game(self, username, tournament_name, game_id):
         t = self.get_tournament(username, tournament_name)
         g = self.models.Game.query.filter_by(id=game_id).first()
@@ -426,6 +432,13 @@ class DBManager:
         game_obj.result = result
         self.db.session.add(game_obj)
         self.db.session.commit()
+
+    @database_response
+    def get_game_result(self, username, tournament_name, game_id):
+        game_obj = self.get_game(username, tournament_name, game_id)
+        if game_obj.result is None:
+            raise DBObjectNotFound("Game results")
+        return game_obj.result
 
     @database_response
     def clear_all_tables(self):

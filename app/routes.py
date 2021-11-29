@@ -238,6 +238,13 @@ def set_game_result(tournament_name):
     return functions.set_game_result(token, tournament_name, game_id, result)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/games/result', methods=['GET'])
+def get_game_result(tournament_name):
+    token: str = request.get_json()["token"]
+    game_id: int = int(request.get_json()["game_id"])
+    return functions.get_game_result(token, tournament_name, game_id)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

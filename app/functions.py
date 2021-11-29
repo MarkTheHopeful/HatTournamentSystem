@@ -545,7 +545,7 @@ def set_game_result(token, tournament_name, game_id, result):
     """
        :param token: session token
        :param tournament_name: name of the tournament to interact with
-       :param game_id: id of game which information to get
+       :param game_id: id of game which information to set
        :param result: result of game
        :return: 200, {} on success, errors on error
        Throws exceptions, but they are handled in wrapper
@@ -555,6 +555,22 @@ def set_game_result(token, tournament_name, game_id, result):
     dbm.set_game_result(username, tournament_name, game_id, result)
 
     return 200, json.dumps({})
+
+
+@function_response
+def get_game_result(token, tournament_name, game_id):
+    """
+       :param token: session token
+       :param tournament_name: name of the tournament to interact with
+       :param game_id: id of game which information to get
+       :return: 200, {"Result": <dict Player_id : result>} on success, errors on error
+       Throws exceptions, but they are handled in wrapper
+       """
+    username = token_auth(token)
+
+    game_result = dbm.get_game_result(username, tournament_name, game_id)
+
+    return 200, json.dumps({"Result": game_result})
 
 
 @function_response
