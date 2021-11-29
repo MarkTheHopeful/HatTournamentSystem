@@ -80,6 +80,7 @@ class Game(db.Model):
         back_populates="games",
         lazy='dynamic',
     )
+    result = db.Column(db.PickleType)
 
 
 class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postponed renaming

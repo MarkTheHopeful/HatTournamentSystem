@@ -1,3 +1,5 @@
+import json
+
 from flask import request
 import app.functions as functions
 from app import app
@@ -225,6 +227,15 @@ def get_game(tournament_name):
     token: str = request.get_json()["token"]
     game_id: int = int(request.get_json()["game_id"])
     return functions.get_game_players(token, tournament_name, game_id)
+
+
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/games/result', methods=['POST'])
+def set_game_result(tournament_name):
+    token: str = request.get_json()["token"]
+    game_id: int = int(request.get_json()["game_id"])
+    result_with_s_keys: dict = json.loads(request.get_json()["result"])
+    result = dict([(int(key), val) for key, val in result_with_s_keys.items()])
+    return functions.set_game_result(token, tournament_name, game_id, result)
 
 
 @app.route('/api/v1/admin/drop', methods=['DELETE'])

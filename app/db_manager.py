@@ -417,6 +417,17 @@ class DBManager:
         return [entities.player.Player(dbu=p).to_base_info_dict() for p in game_obj.players]
 
     @database_response
+    def set_game_result(self, username, tournament_name, game_id, result):
+        game_obj = self.get_game(username, tournament_name, game_id)
+        if game_obj.result is not None:
+            raise DBObjectAlreadyExists("Game results")
+        if result.keys() != set([p.id for p in game_obj.players]):
+            raise LogicPlayersDontMatch()
+        game_obj.result = result
+        self.db.session.add(game_obj)
+        self.db.session.commit()
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

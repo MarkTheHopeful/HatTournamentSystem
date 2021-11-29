@@ -10,3 +10,9 @@ class LogicException(Exception):
 class LogicGameSizeException(LogicException):
     def __init__(self):
         super(LogicGameSizeException, self).__init__(code=400, message="Game should consist at least of two pairs")
+
+
+class LogicPlayersDontMatch(LogicException):
+    def __init__(self):
+        super(LogicPlayersDontMatch, self).__init__(code=400,
+                                                    message="Players in results don't match with the game participants")
