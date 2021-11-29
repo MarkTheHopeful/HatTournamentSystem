@@ -212,6 +212,14 @@ def get_games(tournament_name):  # TODO: Not really meaningful
     return functions.get_games(token, tournament_name, round_name, subround_name)
 
 
+@app.route('/api/v1/tournament/<tournament_name>/subrounds/games/split', methods=['DELETE'])
+def undo_split_subround_into_games(tournament_name):
+    token: str = request.get_json()["token"]
+    round_name: str = request.get_json()["round_name"]
+    subround_name: str = request.get_json()["subround_name"]
+    return functions.undo_split_subround_into_games(token, tournament_name, round_name, subround_name)
+
+
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
 def drop_table():
     secret_code: str = request.get_json()["secret_code"]

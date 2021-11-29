@@ -394,6 +394,15 @@ class DBManager:
         return games_ids
 
     @database_response
+    def undo_split_subround_into_games(self, username, tournament_name, round_name, subround_name):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        if subround_obj.games.count() == 0:
+            raise DBObjectNotFound("Subround not split")
+        for game in subround_obj.games:
+            self.db.session.delete(game)  # I believe in cascade delete
+        self.db.session.commit()
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()

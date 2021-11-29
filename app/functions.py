@@ -506,6 +506,24 @@ def get_games(token, tournament_name, round_name, subround_name):
 
     return 200, json.dumps({"Ids": games_ids})
 
+
+@function_response
+def undo_split_subround_into_games(token, tournament_name, round_name, subround_name):
+    """
+    :param token: session token
+    :param tournament_name: name of the tournament to interact with
+    :param round_name: name is someone reading this? interact with
+    :param subround_name: name of the subround to interact with
+    :return: 200, {} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    dbm.undo_split_subround_into_games(username, tournament_name, round_name, subround_name)
+
+    return 200, json.dumps({})
+
+
 @function_response
 def drop_tables(secret_code):
     """

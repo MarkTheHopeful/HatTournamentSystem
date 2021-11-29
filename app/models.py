@@ -67,8 +67,8 @@ class Subround(db.Model):
         back_populates="subrounds",
         lazy='dynamic'
     )
-    words = db.relationship('Word', backref='subround', lazy='dynamic')
-    games = db.relationship('Game', backref='subround', lazy='dynamic')
+    words = db.relationship('Word', backref='subround', lazy='dynamic', cascade="all, delete-orphan")
+    games = db.relationship('Game', backref='subround', lazy='dynamic', cascade="all, delete-orphan")
 
 
 class Game(db.Model):
@@ -78,7 +78,7 @@ class Game(db.Model):
         "Player",
         secondary=players_in_games,
         back_populates="games",
-        lazy='dynamic'
+        lazy='dynamic',
     )
 
 
