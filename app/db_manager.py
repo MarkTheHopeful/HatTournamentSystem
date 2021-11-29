@@ -171,6 +171,35 @@ class DBManager:
 
         return g
 
+    def update_add_results_push_from_game(self, game_obj):
+        subround_obj = game_obj.subround
+        subround_res = dict()
+        if subround_obj.result is not None:
+            subround_res = subround_obj.result
+        for player_id in game_obj.result:
+            if player_id in subround_res:
+                subround_res[player_id] += game_obj.result[player_id]
+            else:
+                subround_res[player_id] = game_obj.result[player_id]
+        subround_obj.result = subround_res
+        self.db.session.add(subround_obj)
+        self.db.session.commit()
+        self.update_add_results_push_from_subround(subround_obj)
+
+    def update_add_results_push_from_subround(self, subround_obj):
+        round_obj = subround_obj.round  # FIXME: duplicated code.
+        round_res = dict()
+        if round_obj.result is not None:
+            round_res = subround_obj.result
+        for player_id in subround_obj.result:
+            if player_id in round_res:
+                round_res[player_id] += subround_obj.result[player_id]
+            else:
+                round_res[player_id] = subround_obj.result[player_id]
+        round_obj.result = round_res
+        self.db.session.add(round_obj)
+        self.db.session.commit()
+
     # DATABASE RESPONSES
 
     @database_response
@@ -432,6 +461,7 @@ class DBManager:
         game_obj.result = result
         self.db.session.add(game_obj)
         self.db.session.commit()
+        self.update_add_results_push_from_game(game_obj)
 
     @database_response
     def get_game_result(self, username, tournament_name, game_id):
