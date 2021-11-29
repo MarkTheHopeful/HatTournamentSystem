@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 
 from flask import request
 import app.functions as functions
@@ -234,7 +235,7 @@ def set_game_result(tournament_name):
     token: str = request.get_json()["token"]
     game_id: int = int(request.get_json()["game_id"])
     result_with_s_keys: dict = json.loads(request.get_json()["result"])
-    result = dict([(int(key), val) for key, val in result_with_s_keys.items()])
+    result = Counter(dict((int(key), val) for key, val in result_with_s_keys.items()))
     return functions.set_game_result(token, tournament_name, game_id, result)
 
 

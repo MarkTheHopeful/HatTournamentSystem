@@ -4,6 +4,7 @@ import entities.tournament
 import entities.player
 import entities.word
 import entities.round
+from collections import Counter
 from entities.subround import Subround as SubroundE  # FIXME: differs for weird reasons
 
 # FIXME: too many duplicated lines!
@@ -173,30 +174,16 @@ class DBManager:
 
     def update_add_results_push_from_game(self, game_obj):
         subround_obj = game_obj.subround
-        subround_res = dict()
-        if subround_obj.result is not None:
-            subround_res = subround_obj.result
-        for player_id in game_obj.result:
-            if player_id in subround_res:
-                subround_res[player_id] += game_obj.result[player_id]
-            else:
-                subround_res[player_id] = game_obj.result[player_id]
-        subround_obj.result = subround_res
+        subround_obj.results += game_obj.results
         self.db.session.add(subround_obj)
+        self.db.session.add(game_obj)
         self.db.session.commit()
         self.update_add_results_push_from_subround(subround_obj)
 
     def update_add_results_push_from_subround(self, subround_obj):
         round_obj = subround_obj.round  # FIXME: duplicated code.
-        round_res = dict()
-        if round_obj.result is not None:
-            round_res = subround_obj.result
-        for player_id in subround_obj.result:
-            if player_id in round_res:
-                round_res[player_id] += subround_obj.result[player_id]
-            else:
-                round_res[player_id] = subround_obj.result[player_id]
-        round_obj.result = round_res
+        round_obj.results += subround_obj.results
+        self.db.session.add(subround_obj)
         self.db.session.add(round_obj)
         self.db.session.commit()
 
@@ -258,7 +245,7 @@ class DBManager:
 
         tournament = self.get_tournament(username, tournament_name)
         new_round = self.models.Round(name=round_name,
-                                      tournament=tournament)
+                                      tournament=tournament, results=Counter())
         self.db.session.add(new_round)
         self.db.session.commit()
         return new_round.id
@@ -327,6 +314,7 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:  # FIXME: Find some better way to check
             round_obj.players.append(player_obj)
+            round_obj.results[pair_id] = 0
             self.db.session.add(round_obj)
             self.db.session.commit()
         except IntegrityError as e:
@@ -344,6 +332,7 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:
             round_obj.players.remove(player_obj)
+            del round_obj.results[pair_id]
             self.db.session.add(round_obj)
             self.db.session.commit()
         except StaleDataError as e:
@@ -355,7 +344,7 @@ class DBManager:
             raise DBObjectAlreadyExists("Subround")
 
         round_obj = self.get_round(username, tournament_name, round_name)
-        new_subround = self.models.Subround(name=subround_name, round=round_obj)
+        new_subround = self.models.Subround(name=subround_name, round=round_obj, results=Counter())
         self.db.session.add(new_subround)
         self.db.session.commit()
         return new_subround.id
@@ -377,6 +366,7 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:  # FIXME: Find some better way to check
             subround_obj.players.append(player_obj)
+            subround_obj.results[pair_id] = 0
             self.db.session.add(subround_obj)
             self.db.session.commit()
         except IntegrityError as e:
@@ -394,6 +384,7 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:
             subround_obj.players.remove(player_obj)
+            del subround_obj.results[pair_id]
             self.db.session.add(subround_obj)
             self.db.session.commit()
         except StaleDataError as e:
@@ -421,7 +412,8 @@ class DBManager:
         players_parts = shuffle_and_split_near_equal_parts(subround_obj.players.all(),
                                                            games_amount)  # FIXME: can be slow?
         for players_part in players_parts:
-            new_game = self.models.Game(subround=subround_obj)
+            results_counter = Counter([(p.id, 0) for p in players_part])
+            new_game = self.models.Game(subround=subround_obj, results=results_counter, results_set=False)
             self.db.session.add(new_game)
             self.db.session.commit()
             for player in players_part:
@@ -454,11 +446,12 @@ class DBManager:
     @database_response
     def set_game_result(self, username, tournament_name, game_id, result):
         game_obj = self.get_game(username, tournament_name, game_id)
-        if game_obj.result is not None:
+        if game_obj.results_set:
             raise DBObjectAlreadyExists("Game results")
         if result.keys() != set([p.id for p in game_obj.players]):
             raise LogicPlayersDontMatch()
-        game_obj.result = result
+        game_obj.results_set = True
+        game_obj.results = result
         self.db.session.add(game_obj)
         self.db.session.commit()
         self.update_add_results_push_from_game(game_obj)
@@ -466,32 +459,32 @@ class DBManager:
     @database_response
     def get_game_result(self, username, tournament_name, game_id):
         game_obj = self.get_game(username, tournament_name, game_id)
-        if game_obj.result is None:
+        if not game_obj.results_set:
             raise DBObjectNotFound("Game results")
-        return game_obj.result
+        return game_obj.results
 
     @database_response
     def delete_game_result(self, username, tournament_name, game_id):
         game_obj = self.get_game(username, tournament_name, game_id)
-        if game_obj.result is None:
+        if not game_obj.results_set:
             raise DBObjectNotFound("Game results")
-        game_obj.result = None
+        game_obj.results_set = False
         self.db.session.add(game_obj)
         self.db.session.commit()
 
     @database_response
     def get_subround_result(self, username, tournament_name, round_name, subround_name):
         subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
-        if subround_obj.result is None:
+        if subround_obj.results is None:
             raise DBObjectNotFound("Game results")
-        return subround_obj.result
+        return subround_obj.results
 
     @database_response
     def get_round_result(self, username, tournament_name, round_name):
         round_obj = self.get_round(username, tournament_name, round_name)
-        if round_obj.result is None:
+        if round_obj.results is None:
             raise DBObjectNotFound("Game results")
-        return round_obj.result
+        return round_obj.results
 
     @database_response
     def clear_all_tables(self):

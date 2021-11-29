@@ -55,7 +55,7 @@ class Round(db.Model):
         back_populates="rounds",
         lazy='dynamic')
     subrounds = db.relationship('Subround', backref='round', lazy='dynamic')
-    result = db.Column(db.PickleType)
+    results = db.Column(db.PickleType)
 
 
 class Subround(db.Model):
@@ -70,7 +70,7 @@ class Subround(db.Model):
     )
     words = db.relationship('Word', backref='subround', lazy='dynamic', cascade="all, delete-orphan")
     games = db.relationship('Game', backref='subround', lazy='dynamic', cascade="all, delete-orphan")
-    result = db.Column(db.PickleType)
+    results = db.Column(db.PickleType)
 
 
 class Game(db.Model):
@@ -82,7 +82,8 @@ class Game(db.Model):
         back_populates="games",
         lazy='dynamic',
     )
-    result = db.Column(db.PickleType)
+    results = db.Column(db.PickleType)
+    results_set = db.Column(db.Boolean)
 
 
 class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postponed renaming
