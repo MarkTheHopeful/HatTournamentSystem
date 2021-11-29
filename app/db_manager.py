@@ -388,6 +388,12 @@ class DBManager:
         return final_ids
 
     @database_response
+    def get_games(self, username, tournament_name, round_name, subround_name):
+        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+        games_ids = [game.id for game in subround_obj.games]
+        return games_ids
+
+    @database_response
     def clear_all_tables(self):
         self.db.drop_all()
         self.db.create_all()
