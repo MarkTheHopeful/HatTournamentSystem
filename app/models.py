@@ -40,6 +40,10 @@ players_in_subrounds = Table("players_in_subrounds", db.Model.metadata,
                              db.Column("player_id", db.Integer, db.ForeignKey('player.id'), primary_key=True),
                              db.Column("subround_id", db.Integer, db.ForeignKey('subround.id'), primary_key=True))
 
+players_in_games = Table("players_in_games", db.Model.metadata,
+                         db.Column("player_id", db.Integer, db.ForeignKey('player.id'), primary_key=True),
+                         db.Column("game_id", db.Integer, db.ForeignKey("game.id"), primary_key=True))
+
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,10 +68,18 @@ class Subround(db.Model):
         lazy='dynamic'
     )
     words = db.relationship('Word', backref='subround', lazy='dynamic')
+    games = db.relationship('Game', backref='subround', lazy='dynamic')
 
 
-# class Game(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subround_id = db.Column(db.Integer, db.ForeignKey('subround.id'), nullable=False)
+    players = db.relationship(
+        "Player",
+        secondary=players_in_games,
+        back_populates="games",
+        lazy='dynamic'
+    )
 
 
 class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postponed renaming
@@ -87,6 +99,12 @@ class Player(db.Model):  # FIXME: Actually, it's a pair of players, but I postpo
         back_populates="players",
         lazy='dynamic'
     )
+    games = db.relationship(
+        "Game",
+        secondary=players_in_games,
+        back_populates="players",
+        lazy='dynamic'
+    )
 
 
 class Word(db.Model):
@@ -95,4 +113,4 @@ class Word(db.Model):
     difficulty = db.Column(db.Integer, index=True, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournament.id'), nullable=False)
     subround_id = db.Column(db.Integer, db.ForeignKey('subround.id'))
-    random_seed = db.Column(db.Integer, index=True,  nullable=False)
+    random_seed = db.Column(db.Integer, index=True, nullable=False)
