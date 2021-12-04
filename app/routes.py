@@ -34,8 +34,8 @@ def register():
 @app.route('/api/v1/tournament', methods=['POST'])
 def new_tournament():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["name"]
-    return functions.new_tournament(token, tournament_name)
+    name: str = request.get_json()["name"]
+    return functions.new_tournament(token, name)
 
 
 @app.route('/api/v1/tournament', methods=['GET'])

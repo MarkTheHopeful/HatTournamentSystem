@@ -133,16 +133,17 @@ def register(username, password):
 
 
 @function_response
-def new_tournament(token, tournament_name):
+def new_tournament(token, name):
     """
     :param token: session token
-    :param tournament_name: name of new tournament to create
-    :return: 200, {} if success; 403, {} if token is invalid
+    :param name: name of new tournament to create
+    :return: 200, {"ID": tournament_id} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    new_id = dbm.insert_tournament(username, Tournament(name=tournament_name))
-    return 200, json.dumps({"Id": new_id})
+    tournament_id = dbm.insert_tournament(username, Tournament(name=name))
+
+    return 200, json.dumps({"ID": tournament_id})
 
 
 @function_response

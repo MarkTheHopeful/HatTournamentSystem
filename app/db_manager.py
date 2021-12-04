@@ -244,10 +244,10 @@ class DBManager:
 
     @database_response
     def insert_tournament(self, username, tournament_obj):
-        u = self.get_user(username)
+        user_obj = self.get_user(username)
         if self.is_tournament_exists(username, tournament_obj.name):
             raise DBObjectAlreadyExists("Tournament")
-        new_tournament = self.models.Tournament(name=tournament_obj.name, owner=u)
+        new_tournament = self.models.Tournament(name=tournament_obj.name, owner=user_obj)
         self.db.session.add(new_tournament)
         self.db.session.commit()
         return new_tournament.id
