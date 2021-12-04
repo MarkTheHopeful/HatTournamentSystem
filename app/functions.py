@@ -7,13 +7,13 @@
 # TODO: update documentation
 
 
-import json
 import datetime
 from app.extensions import dbm
-from exceptions.LogicExceptions import LogicException
+from exceptions.UserExceptions import ObjectNotFound
 from utils.encrypt import encrypt_password, check_password
 from config import Config
-from exceptions.DBExceptions import DBException, DBObjectNotFound
+from exceptions import KnownException
+from app.db_manager import DBException
 from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
@@ -38,17 +38,12 @@ def function_response(result_function):
         try:
             status_code, data = result_function(*args, **kwargs)
         except DBException as e:
-            if e.code != 699:
-                data = json.dumps({"Message": e.message})
-            else:
-                data = json.dumps({"Error": str(e), "Stack": full_stack()})
-                print("DBException:", e)
-            e.code = status_code
-        except LogicException as e:
+            data = {"Error": str(e), "Stack": full_stack()}
+        except KnownException as e:
             status_code = e.code
-            data = json.dumps({"Message": e.message})
+            data = {"Message": e.message}
         except Exception as e:
-            data = json.dumps({"Error": str(e), "Stack": full_stack()})
+            data = {"Error": str(e), "Stack": full_stack()}
             print(e)
         response = make_response(data, status_code)
         response.headers['Content-Type'] = 'application/json'
@@ -66,7 +61,7 @@ def token_auth(token):
 
     if exp_time < datetime.datetime.utcnow():
         dbm.delete_token(token)
-        raise DBObjectNotFound("Token")  # TODO: seems not good, I guess
+        raise ObjectNotFound("Token")  # TODO: seems not good, I guess
     return username
 
 
@@ -78,8 +73,7 @@ def status():  # TODO: rewrite to add meaningful information
      'Amount of games', 'Length of queue';
     """
     code = 200
-    result = {'State': 'Active', 'API version': 'v1', 'DB manager': 'Ok' if dbm.is_ok() else "FAILED"}
-    data = json.dumps(result)
+    data = {'State': 'Active', 'API version': 'v1', 'DB manager': 'Ok' if dbm.is_ok() else "FAILED"}
     return code, data
 
 
@@ -95,12 +89,12 @@ def login(username, password):
     u_hash = dbm.get_password_hash(username)
 
     if not check_password(password, u_hash):
-        raise DBObjectNotFound("User")
+        raise ObjectNotFound("User")
 
     tok_uuid, tok_exp = gen_token()
     dbm.insert_token(tok_uuid, tok_exp, username)
     code = 200
-    data = json.dumps({'Token': tok_uuid})
+    data = {'Token': tok_uuid}
 
     return code, data
 
@@ -118,7 +112,7 @@ def register(username, password):
     pass_hash = encrypt_password(password)
     dbm.insert_user(User(username=username), pass_hash)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -132,7 +126,7 @@ def new_tournament(token, name):
     username = token_auth(token)
     tournament_id = dbm.insert_tournament(username, Tournament(name=name))
 
-    return 200, json.dumps({"ID": tournament_id})
+    return 200, {"ID": tournament_id}
 
 
 @function_response
@@ -145,7 +139,7 @@ def get_tournaments(token):
     username = token_auth(token)
     tournaments = dbm.get_tournaments(username)
 
-    return 200, json.dumps({"Tournaments": tournaments})
+    return 200, {"Tournaments": tournaments}
 
 
 @function_response
@@ -161,7 +155,7 @@ def new_player(token, tournament_name, name_first, name_second):
     username = token_auth(token)
     new_id = dbm.insert_player(username, tournament_name, name_first, name_second)
 
-    return 200, json.dumps({"Id": new_id})
+    return 200, {"Id": new_id}
 
 
 @function_response
@@ -175,7 +169,7 @@ def get_players(token, tournament_name):
     username = token_auth(token)
     players = dbm.get_players(username, tournament_name)
 
-    return 200, json.dumps({"Players": players})
+    return 200, {"Players": players}
 
 
 @function_response
@@ -191,7 +185,7 @@ def delete_player(token, tournament_name, name_first, name_second):
     username = token_auth(token)
     dbm.delete_player(username, tournament_name, name_first, name_second)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -207,7 +201,7 @@ def new_word(token, tournament_name, word_text, word_difficulty):
     username = token_auth(token)
     new_id = dbm.insert_word(username, tournament_name, word_text, word_difficulty)
 
-    return 200, json.dumps({"Id": new_id})
+    return 200, {"Id": new_id}
 
 
 @function_response
@@ -221,7 +215,7 @@ def get_words(token, tournament_name):
     username = token_auth(token)
     words = dbm.get_words(username, tournament_name)
 
-    return 200, json.dumps({"Words": words})
+    return 200, {"Words": words}
 
 
 @function_response
@@ -236,7 +230,7 @@ def delete_word(token, tournament_name, word_text):
     username = token_auth(token)
     dbm.delete_word(username, tournament_name, word_text)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -251,7 +245,7 @@ def new_round(token, tournament_name, round_name):
     username = token_auth(token)
     new_id = dbm.insert_round(username, tournament_name, round_name)
 
-    return 200, json.dumps({"Id": new_id})
+    return 200, {"Id": new_id}
 
 
 @function_response
@@ -265,7 +259,7 @@ def get_rounds(token, tournament_name):
     username = token_auth(token)
     rounds = dbm.get_rounds(username, tournament_name)
 
-    return 200, json.dumps({"Rounds": rounds})
+    return 200, {"Rounds": rounds}
 
 
 @function_response
@@ -280,7 +274,7 @@ def delete_round(token, tournament_name, round_name):
     username = token_auth(token)
     dbm.delete_round(username, tournament_name, round_name)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -296,7 +290,7 @@ def add_player_to_round(token, tournament_name, round_name, pair_id):
     username = token_auth(token)
     dbm.add_pair_id_to_round(username, tournament_name, round_name, pair_id)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -311,7 +305,7 @@ def get_players_in_round(token, tournament_name, round_name):
     username = token_auth(token)
     players = dbm.get_players_in_round(username, tournament_name, round_name)
 
-    return 200, json.dumps({"Players": players})
+    return 200, {"Players": players}
 
 
 @function_response
@@ -327,7 +321,7 @@ def delete_player_from_round(token, tournament_name, round_name, pair_id):
     username = token_auth(token)
 
     dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -343,7 +337,7 @@ def new_subround(token, tournament_name, round_name, subround_name):
     username = token_auth(token)
 
     new_id = dbm.insert_subround(username, tournament_name, round_name, subround_name)
-    return 200, json.dumps({"Id": new_id})
+    return 200, {"Id": new_id}
 
 
 @function_response
@@ -357,7 +351,7 @@ def get_subrounds(token, tournament_name, round_name):
     """
     username = token_auth(token)
 
-    return 200, json.dumps({"Subrounds": dbm.get_subrounds(username, tournament_name, round_name)})
+    return 200, {"Subrounds": dbm.get_subrounds(username, tournament_name, round_name)}
 
 
 @function_response
@@ -373,7 +367,7 @@ def delete_subround(token, tournament_name, round_name, subround_name):
     username = token_auth(token)
     dbm.delete_subround(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -390,7 +384,7 @@ def add_player_to_subround(token, tournament_name, round_name, subround_name, pa
     username = token_auth(token)
     dbm.add_pair_id_to_subround(username, tournament_name, round_name, subround_name, pair_id)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -405,7 +399,7 @@ def get_players_in_subround(token, tournament_name, round_name, subround_name):
     username = token_auth(token)
     players = dbm.get_players_in_subround(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({"Players": players})
+    return 200, {"Players": players}
 
 
 @function_response
@@ -422,7 +416,7 @@ def delete_player_from_subround(token, tournament_name, round_name, subround_nam
     username = token_auth(token)
 
     dbm.delete_player_from_subround(username, tournament_name, round_name, subround_name, pair_id)
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -442,7 +436,7 @@ def add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subrou
 
     dbm.add_x_words_of_diff_y_to_subround(username, tournament_name, round_name, subround_name, words_difficulty,
                                           words_amount)
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -459,7 +453,7 @@ def get_subround_words(token, tournament_name, round_name, subround_name):
 
     words = dbm.get_subround_words(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({"Words": words})
+    return 200, {"Words": words}
 
 
 @function_response
@@ -477,7 +471,7 @@ def split_subround_into_games(token, tournament_name, round_name, subround_name,
 
     games_ids = dbm.split_subround_into_games(username, tournament_name, round_name, subround_name, games_amount)
 
-    return 200, json.dumps({"Ids": games_ids})
+    return 200, {"Ids": games_ids}
 
 
 @function_response
@@ -494,7 +488,7 @@ def get_games(token, tournament_name, round_name, subround_name):
 
     games_ids = dbm.get_games(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({"Ids": games_ids})
+    return 200, {"Ids": games_ids}
 
 
 @function_response
@@ -511,7 +505,7 @@ def undo_split_subround_into_games(token, tournament_name, round_name, subround_
 
     dbm.undo_split_subround_into_games(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -527,7 +521,7 @@ def get_game_players(token, tournament_name, game_id):
 
     players = dbm.get_game_players(username, tournament_name, game_id)
 
-    return 200, json.dumps({"Players": players})
+    return 200, {"Players": players}
 
 
 @function_response
@@ -544,7 +538,7 @@ def set_game_result(token, tournament_name, game_id, result):
 
     dbm.set_game_result(username, tournament_name, game_id, result)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -560,7 +554,7 @@ def get_game_result(token, tournament_name, game_id):
 
     game_result = dbm.get_game_result(username, tournament_name, game_id)
 
-    return 200, json.dumps({"Result": game_result.most_common()})
+    return 200, {"Result": game_result.most_common()}
 
 
 @function_response
@@ -576,7 +570,7 @@ def delete_game_result(token, tournament_name, game_id):
 
     dbm.delete_game_result(username, tournament_name, game_id)
 
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -593,7 +587,7 @@ def get_subround_result(token, tournament_name, round_name, subround_name):
 
     subround_result = dbm.get_subround_result(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({"Result": subround_result.most_common()})
+    return 200, {"Result": subround_result.most_common()}
 
 
 @function_response
@@ -609,7 +603,7 @@ def get_round_result(token, tournament_name, round_name):
 
     round_result = dbm.get_round_result(username, tournament_name, round_name)
 
-    return 200, json.dumps({"Result": round_result.most_common()})
+    return 200, {"Result": round_result.most_common()}
 
 
 @function_response
@@ -620,9 +614,9 @@ def drop_tables(secret_code):
     200, {} if everything is dropped and recreated successfully
     """
     if secret_code != Config.ADMIN_SECRET:
-        return 404, json.dumps({})
+        return 404, {}
     dbm.clear_all_tables()
-    return 200, json.dumps({})
+    return 200, {}
 
 
 @function_response
@@ -634,7 +628,7 @@ def fill_with_example(secret_code):
     May throw other exceptions
     """
     if secret_code != Config.ADMIN_SECRET:
-        return 404, json.dumps({})
+        return 404, {}
 
     example_username = template_data.EXAMPLE_USER[0]
     dbm.insert_user(User(username=example_username), encrypt_password(template_data.EXAMPLE_USER[1]))
@@ -658,4 +652,4 @@ def fill_with_example(secret_code):
         dbm.add_pair_id_to_subround(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[ri],
                                     template_data.EXAMPLE_SUBROUNDS[sri][0], ind)
 
-    return 200, json.dumps({})
+    return 200, {}
