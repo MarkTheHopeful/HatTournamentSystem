@@ -174,7 +174,8 @@ class DBManager:
 
     def update_add_results_push_from_game(self, game_obj):
         subround_obj = game_obj.subround
-        subround_obj.results += game_obj.results
+        new_results = Counter(subround_obj.results) + game_obj.results
+        subround_obj.results = new_results
         self.db.session.add(subround_obj)
         self.db.session.add(game_obj)
         self.db.session.commit()
@@ -182,7 +183,8 @@ class DBManager:
 
     def update_add_results_push_from_subround(self, subround_obj):
         round_obj = subround_obj.round  # FIXME: duplicated code.
-        round_obj.results += subround_obj.results
+        new_results = Counter(round_obj.results) + subround_obj.results
+        subround_obj.results = new_results
         self.db.session.add(subround_obj)
         self.db.session.add(round_obj)
         self.db.session.commit()
@@ -314,7 +316,9 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:  # FIXME: Find some better way to check
             round_obj.players.append(player_obj)
-            round_obj.results[pair_id] = 0
+            results = Counter(round_obj.results)
+            results[pair_id] = 0
+            round_obj.results = results
             self.db.session.add(round_obj)
             self.db.session.commit()
         except IntegrityError as e:
@@ -332,7 +336,9 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:
             round_obj.players.remove(player_obj)
-            del round_obj.results[pair_id]
+            results = Counter(round_obj.results)
+            del results[pair_id]
+            round_obj.results = results
             self.db.session.add(round_obj)
             self.db.session.commit()
         except StaleDataError as e:
@@ -366,7 +372,9 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:  # FIXME: Find some better way to check
             subround_obj.players.append(player_obj)
-            subround_obj.results[pair_id] = 0
+            results = Counter(subround_obj.results)
+            results[pair_id] = 0
+            subround_obj.results = results
             self.db.session.add(subround_obj)
             self.db.session.commit()
         except IntegrityError as e:
@@ -384,7 +392,9 @@ class DBManager:
         player_obj = self.get_pair_by_id(pair_id)
         try:
             subround_obj.players.remove(player_obj)
-            del subround_obj.results[pair_id]
+            results = Counter(subround_obj.results)
+            del results[pair_id]
+            subround_obj.results = results
             self.db.session.add(subround_obj)
             self.db.session.commit()
         except StaleDataError as e:

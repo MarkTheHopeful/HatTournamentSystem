@@ -605,6 +605,7 @@ def get_subround_result(token, tournament_name, round_name, subround_name):
 
     return 200, json.dumps({"Result": subround_result})
 
+
 @function_response
 def get_round_result(token, tournament_name, round_name):
     """
