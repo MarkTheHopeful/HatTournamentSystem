@@ -184,7 +184,24 @@ class DBManager:
     def update_add_results_push_from_subround(self, subround_obj):
         round_obj = subround_obj.round  # FIXME: duplicated code.
         new_results = Counter(round_obj.results) + subround_obj.results
+        round_obj.results = new_results
+        self.db.session.add(subround_obj)
+        self.db.session.add(round_obj)
+        self.db.session.commit()
+
+    def update_subtract_results_push_from_game(self, game_obj):
+        subround_obj = game_obj.subround
+        new_results = Counter(subround_obj.results) - game_obj.results
         subround_obj.results = new_results
+        self.db.session.add(subround_obj)
+        self.db.session.add(game_obj)
+        self.db.session.commit()
+        self.update_subtract_results_push_from_subround(subround_obj, game_obj)
+
+    def update_subtract_results_push_from_subround(self, subround_obj, game_obj):
+        round_obj = subround_obj.round
+        new_results = Counter(round_obj.results) - game_obj.results
+        round_obj.results = new_results
         self.db.session.add(subround_obj)
         self.db.session.add(round_obj)
         self.db.session.commit()
@@ -478,6 +495,7 @@ class DBManager:
         game_obj = self.get_game(username, tournament_name, game_id)
         if not game_obj.results_set:
             raise DBObjectNotFound("Game results")
+        self.update_subtract_results_push_from_game(game_obj)
         game_obj.results_set = False
         self.db.session.add(game_obj)
         self.db.session.commit()

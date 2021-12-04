@@ -570,7 +570,7 @@ def get_game_result(token, tournament_name, game_id):
 
     game_result = dbm.get_game_result(username, tournament_name, game_id)
 
-    return 200, json.dumps({"Result": game_result})
+    return 200, json.dumps({"Result": game_result.most_common()})
 
 
 @function_response
@@ -603,7 +603,7 @@ def get_subround_result(token, tournament_name, round_name, subround_name):
 
     subround_result = dbm.get_subround_result(username, tournament_name, round_name, subround_name)
 
-    return 200, json.dumps({"Result": subround_result})
+    return 200, json.dumps({"Result": subround_result.most_common()})
 
 
 @function_response
@@ -619,7 +619,7 @@ def get_round_result(token, tournament_name, round_name):
 
     round_result = dbm.get_round_result(username, tournament_name, round_name)
 
-    return 200, json.dumps({"Result": round_result})
+    return 200, json.dumps({"Result": round_result.most_common()})
 
 
 @function_response
