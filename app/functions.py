@@ -18,20 +18,7 @@ from utils.utils import gen_token, full_stack
 from entities.user import User
 from entities.tournament import Tournament
 from utils import template_data  # FIXME: DEBUG only
-
-
-class Response:  # FIXME: Exists an actual Flask.Response object!
-    code = 500
-    data = None
-
-    def __init__(self, code=500, data=None):
-        self.code = code
-        if data is None:
-            data = json.dumps({})
-        self.data = json.loads(data)
-
-    def __str__(self):
-        return str(json.dumps({"data": self.data}))
+from flask import make_response
 
 
 # FIXME: Now this thing handles all the exceptions
@@ -47,23 +34,25 @@ def function_response(result_function):
     """
 
     def wrapped(*args, **kwargs):
-        code = 500
+        status_code = 500
         try:
-            code, data = result_function(*args, **kwargs)
+            status_code, data = result_function(*args, **kwargs)
         except DBException as e:
             if e.code != 699:
                 data = json.dumps({"Message": e.message})
             else:
                 data = json.dumps({"Error": str(e), "Stack": full_stack()})
                 print("DBException:", e)
-            e.code = code
+            e.code = status_code
         except LogicException as e:
-            code = e.code
+            status_code = e.code
             data = json.dumps({"Message": e.message})
         except Exception as e:
             data = json.dumps({"Error": str(e), "Stack": full_stack()})
             print(e)
-        return str(Response(code, data)), code
+        response = make_response(data, status_code)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
     return wrapped
 
