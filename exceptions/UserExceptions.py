@@ -26,4 +26,4 @@ class ObjectNotFound(UserException):
 
 class ObjectAlreadyExists(UserException):
     def __init__(self, object_name):
-        super().__init__(400, f"{object_name} is already exists")
+        super().__init__(400, f"{object_name} already exists")

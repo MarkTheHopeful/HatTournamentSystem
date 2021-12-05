@@ -155,49 +155,47 @@ def new_player(token: str, tournament_id: int, name_first: str, name_second: str
 
 
 @function_response
-def get_players(token, tournament_name):
+def get_players(token: str, tournament_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to which the players will be added
-    :return: 200, {"Players": <list of players>} on success; 403, {} if not the owner of tournament
+    :param tournament_id: id of the tournament
+    :return: 200, {"Players": list of players} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    players = dbm.get_players(username, tournament_name)
+    players = dbm.get_players(username, tournament_id)
 
     return 200, {"Players": players}
 
 
 @function_response
-def delete_player(token, tournament_name, name_first, name_second):
+def delete_player(token: str, pair_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to which the players will be added
-    :param name_first: name of the first player in pair
-    :param name_second: name of the second player in pair
-    :return: 200, {} on success; 400, {} if no such pair in tournament, 403, {} is not owner of tournament
+    :param pair_id: id of the pair to delete
+    :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.delete_player(username, tournament_name, name_first, name_second)
+    dbm.delete_player(username, pair_id)
 
     return 200, {}
 
 
 @function_response
-def new_word(token, tournament_name, word_text, word_difficulty):
+def new_word(token: str, tournament_id: int, word_text: str, word_difficulty: int):
     """
     :param token: session token
-    :param tournament_name: name of the tournament to which the word will be added
+    :param tournament_id: id of the tournament to which the word will be added
     :param word_text: text of word
     :param word_difficulty: how difficult is it to explain the word
-    :return: 200, {} on success; 400, {} if the word is already in tournament, 403, {} is not owner of tournament
+    :return: 201, {"ID": word_id} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    new_id = dbm.insert_word(username, tournament_name, word_text, word_difficulty)
+    new_id = dbm.insert_word(username, tournament_id, word_text, word_difficulty)
 
-    return 200, {"Id": new_id}
+    return 201, {"ID": new_id}
 
 
 @function_response
@@ -615,6 +613,7 @@ def drop_tables(secret_code):
     return 200, {}
 
 
+# FIXME: outdated, probably
 @function_response
 def fill_with_example(secret_code):
     """
@@ -640,7 +639,7 @@ def fill_with_example(secret_code):
                             subround_name)
 
     for word, diff in template_data.EXAMPLE_WORDS:
-        dbm.insert_word(example_username, example_tournament, word, diff)
+        dbm.insert_word(example_username, 0, word, diff)    # ???
 
     for p1, p2, ri, sri, ind in template_data.EXAMPLE_PLAYERS:
         dbm.insert_player(example_username, example_tournament, p1, p2)

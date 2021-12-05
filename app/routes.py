@@ -56,26 +56,24 @@ def new_player():
 @app.route('/api/v1/players', methods=['GET'])
 def get_players():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    return functions.get_players(token, tournament_name)
+    tournament_id: int = int(request.get_json()["tournament_id"])
+    return functions.get_players(token, tournament_id)
 
 
 @app.route('/api/v1/players', methods=['DELETE'])
 def delete_player():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    name_first: str = request.get_json()["name_first"]
-    name_second: str = request.get_json()["name_second"]
-    return functions.delete_player(token, tournament_name, name_first, name_second)
+    pair_id: int = int(request.get_json()["pair_id"])
+    return functions.delete_player(token, pair_id)
 
 
 @app.route('/api/v1/words', methods=['POST'])
 def new_word():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
+    tournament_id: int = request.get_json()["tournament_id"]
     word_text: str = request.get_json()["word_text"]
     word_difficulty: int = int(request.get_json()["word_difficulty"])
-    return functions.new_word(token, tournament_name, word_text, word_difficulty)
+    return functions.new_word(token, tournament_id, word_text, word_difficulty)
 
 
 @app.route('/api/v1/words', methods=['GET'])

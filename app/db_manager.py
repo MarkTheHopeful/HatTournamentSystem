@@ -83,7 +83,7 @@ class DBManager:
         user_obj = self.get_user(username)
         return self.models.Tournament.query.filter_by(id=tournament_id).first().user_id == user_obj.id
 
-    def is_tournament_owner_id(self, user_id, tournament_id):
+    def is_tournament_owner_id(self, user_id: int, tournament_id: int) -> bool:
         return self.models.Tournament.query.filter_by(id=tournament_id).first().user_id == user_id
 
     def get_tournament_id(self, user_id: int, tournament_id: int):
@@ -130,21 +130,15 @@ class DBManager:
                 (self.models.Player.name_second == player_name)))).first()
         return p is not None
 
-    def get_pair(self, username, tournament_name, name_first, name_second):  # FIXME: cringe
-        t = self.get_tournament(username, tournament_name)
-        p = self.models.Player.query.filter(((self.models.Player.tournament_id == t.id) & (
-                ((self.models.Player.name_first == name_first) & (self.models.Player.name_second == name_second)) |
-                ((self.models.Player.name_first == name_second) & (self.models.Player.name_second == name_first)))
-                                             )).first()
-        if p is None:
+    def get_pair_id(self, user_id: int, pair_id: int):
+        pair_obj = self.models.Player.query.filter_by(id=pair_id)
+        if pair_obj is None or not self.is_tournament_owner_id(user_id, pair_obj.tournament_id):
             raise ObjectNotFound("Player")
-        return p
+        return pair_obj
 
-    def get_pair_by_id(self, pair_id):  # FIXME: merge with previous using kwargs
-        p = self.models.Player.query.filter_by(id=pair_id).first()
-        if p is None:
-            raise ObjectNotFound("Player")
-        return p
+    def is_word_exists_id(self, user_id: int, tournament_id: int, word_text: str) -> bool:
+        word_obj = self.models.Word.query.filter_by(text=word_text, tournament_id=tournament_id)
+        return word_obj is not None and self.is_tournament_owner_id(user_id, tournament_id)
 
     def is_word_exists(self, username, tournament_name, word_text):
         t = self.get_tournament(username, tournament_name)
@@ -325,24 +319,26 @@ class DBManager:
         return new_player.id
 
     @database_response
-    def get_players(self, username, tournament_name):
-        tournament = self.get_tournament(username, tournament_name)
+    def get_players(self, username: str, tournament_id: int) -> List:
+        user_obj = self.get_user(username)
+        tournament = self.get_tournament_id(user_obj.id, tournament_id)
         return [entities.player.Player(dbu=p).to_base_info_dict() for p in tournament.players]
 
     @database_response
-    def delete_player(self, username, tournament_name, name_first, name_second):
-        pair_to_delete = self.get_pair(username, tournament_name, name_first, name_second)
+    def delete_player(self, username: str, pair_id: int) -> None:
+        user_obj = self.get_user(username)
+        pair_to_delete = self.get_pair_id(user_obj.id, pair_id)
         self.db.session.delete(pair_to_delete)
         self.db.session.commit()
 
     @database_response
-    def insert_word(self, username, tournament_name, word_text, word_difficulty):
-
-        if self.is_word_exists(username, tournament_name, word_text):
+    def insert_word(self, username: str, tournament_id: int, word_text: str, word_difficulty: int) -> int:
+        user_obj = self.get_user(username)
+        if self.is_word_exists_id(user_obj.id, tournament_id, word_text):
             raise ObjectAlreadyExists("Word")
 
-        tournament = self.get_tournament(username, tournament_name)
-        new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament,
+        tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
+        new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament_obj,
                                     random_seed=gen_rand_key())
         self.db.session.add(new_word)
         self.db.session.commit()
@@ -362,7 +358,8 @@ class DBManager:
     @database_response
     def add_pair_id_to_round(self, username, tournament_name, round_name, pair_id):
         round_obj = self.get_round(username, tournament_name, round_name)
-        player_obj = self.get_pair_by_id(pair_id)
+        user_obj = self.get_user(username)
+        player_obj = self.get_pair_id(user_obj.id, pair_id)
         try:  # FIXME: Find some better way to check
             round_obj.players.append(player_obj)
             results = Counter(round_obj.results)
@@ -382,7 +379,8 @@ class DBManager:
     @database_response
     def delete_player_from_round(self, username, tournament_name, round_name, pair_id):
         round_obj = self.get_round(username, tournament_name, round_name)
-        player_obj = self.get_pair_by_id(pair_id)
+        user_obj = self.get_user(username)
+        player_obj = self.get_pair_id(user_obj.id, pair_id)
         try:
             round_obj.players.remove(player_obj)
             results = Counter(round_obj.results)
@@ -418,7 +416,8 @@ class DBManager:
     @database_response
     def add_pair_id_to_subround(self, username, tournament_name, round_name, subround_name, pair_id):
         subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
-        player_obj = self.get_pair_by_id(pair_id)
+        user_obj = self.get_user(username)
+        player_obj = self.get_pair_id(user_obj.id, pair_id)
         try:  # FIXME: Find some better way to check
             subround_obj.players.append(player_obj)
             results = Counter(subround_obj.results)
@@ -438,7 +437,8 @@ class DBManager:
     @database_response
     def delete_player_from_subround(self, username, tournament_name, round_name, subround_name, pair_id):
         subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
-        player_obj = self.get_pair_by_id(pair_id)
+        user_obj = self.get_user(username)
+        player_obj = self.get_pair_id(user_obj.id, pair_id)
         try:
             subround_obj.players.remove(player_obj)
             results = Counter(subround_obj.results)
