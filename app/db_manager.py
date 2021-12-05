@@ -59,7 +59,7 @@ class DBManager:
         user_obj = self.models.User.query.filter_by(username=username).first()
         return user_obj is not None
 
-    def get_user(self, username: str):  # Returns Not None User Object
+    def get_user(self, username: str):
         user_obj = self.models.User.query.filter_by(username=username).first()
         if user_obj is None:
             raise ObjectNotFound("User")
@@ -86,18 +86,17 @@ class DBManager:
     def is_tournament_owner_id(self, user_id, tournament_id):
         return self.models.Tournament.query.filter_by(id=tournament_id).first().user_id == user_id
 
+    def get_tournament_id(self, user_id, tournament_id):
+        tournament_obj = self.models.Tournament.query.filter_by(id=tournament_id, user_id=user_id).first()
+        if tournament_obj is None:
+            raise ObjectNotFound("Tournament")
+        return tournament_obj
+
     def get_tournament(self, username, tournament_name):
         user_obj = self.get_user(username)
         tournament_obj = self.models.Tournament.query.filter((
                 (self.models.Tournament.user_id == user_obj.id) & (
                 self.models.Tournament.name == tournament_name))).first()
-        if tournament_obj is None:
-            raise ObjectNotFound("Tournament")
-        return tournament_obj
-
-    def get_tournament_id(self, username, tournament_id):
-        user_obj = self.get_user(username)
-        tournament_obj = self.models.Tournament.query.filter_by(id=tournament_id, user_id=user_obj.id).first()
         if tournament_obj is None:
             raise ObjectNotFound("Tournament")
         return tournament_obj
@@ -108,10 +107,16 @@ class DBManager:
                                                    (self.models.Round.tournament_id == tournament_obj.id)).first()
         return round_obj is not None
 
-    def is_round_exists_id(self, username, tournament_id, round_name):
-        tournament_obj = self.get_tournament_id(username, tournament_id)
+    def is_round_exists_id(self, user_id, tournament_id, round_name):
+
         round_obj = self.models.Round.query.filter_by(name=round_name, tournament_id=tournament_id).first()
         return round_obj is not None
+
+    def get_round_id(self, user_id, round_id):
+        round_obj = self.models.Round.query.filter_by(round_id=round_id).first()
+        if round_obj is None or round_obj.tournament.user_id != user_id:
+            raise ObjectNotFound("Round")
+        return round_obj
 
     def get_round(self, username, tournament_name, round_name):
         t = self.get_tournament(username, tournament_name)
