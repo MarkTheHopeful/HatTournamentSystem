@@ -1,4 +1,4 @@
-from typing import Tuple, Callable, Optional
+from typing import Tuple, Callable, Optional, List
 from flask_sqlalchemy import SQLAlchemy
 
 from exceptions import KnownException
@@ -86,7 +86,7 @@ class DBManager:
     def is_tournament_owner_id(self, user_id, tournament_id):
         return self.models.Tournament.query.filter_by(id=tournament_id).first().user_id == user_id
 
-    def get_tournament_id(self, user_id, tournament_id):
+    def get_tournament_id(self, user_id: int, tournament_id: int):
         tournament_obj = self.models.Tournament.query.filter_by(id=tournament_id, user_id=user_id).first()
         if tournament_obj is None:
             raise ObjectNotFound("Tournament")
@@ -101,14 +101,9 @@ class DBManager:
             raise ObjectNotFound("Tournament")
         return tournament_obj
 
-    def is_round_exists(self, username, tournament_name, round_name):
-        tournament_obj = self.get_tournament(username, tournament_name)
-        round_obj = self.models.Round.query.filter((self.models.Round.name == round_name) &
-                                                   (self.models.Round.tournament_id == tournament_obj.id)).first()
-        return round_obj is not None
-
-    def is_round_exists_id(self, user_id, tournament_id, round_name):
-
+    def is_round_exists_id(self, user_id: int, tournament_id: int, round_name: str) -> bool:
+        if not self.is_tournament_owner_id(user_id, tournament_id):
+            return False
         round_obj = self.models.Round.query.filter_by(name=round_name, tournament_id=tournament_id).first()
         return round_obj is not None
 
@@ -126,20 +121,14 @@ class DBManager:
             raise ObjectNotFound("Round")
         return r
 
-    def is_player_exists(self, username, tournament_name, player_name):  # FIXME: will be changed, Player class changes
-        t = self.get_tournament(username, tournament_name)
-        p = self.models.Player.query.filter(((self.models.Player.tournament_id == t.id) & (
+    def is_player_exists_id(self, user_id: int, tournament_id: int, player_name: str) -> bool:  # FIXME: will change
+        if not self.is_tournament_owner_id(user_id, tournament_id):
+            return False
+
+        p = self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
                 (self.models.Player.name_first == player_name) |
                 (self.models.Player.name_second == player_name)))).first()
         return p is not None
-
-    def is_player_exists_id(self, username, tournament_id, player_name):  # FIXME: will be changed, Player class changes
-        # t = self.get_tournament(username, tournament_name)
-        # p = self.models.Player.query.filter(((self.models.Player.tournament_id == t.id) & (
-        #         (self.models.Player.name_first == player_name) |
-        #         (self.models.Player.name_second == player_name)))).first()
-        # return p is not None
-        return False
 
     def get_pair(self, username, tournament_name, name_first, name_second):  # FIXME: cringe
         t = self.get_tournament(username, tournament_name)
@@ -251,8 +240,8 @@ class DBManager:
     # DATABASE RESPONSES
 
     @database_response
-    def insert_user(self, user_obj, pass_hash: str):
-        new_user = self.models.User(username=user_obj.username, password_hash=pass_hash)
+    def insert_user(self, username: str, pass_hash: str) -> None:
+        new_user = self.models.User(username=username, password_hash=pass_hash)
         try:
             self.db.session.add(new_user)
             self.db.session.commit()
@@ -272,41 +261,41 @@ class DBManager:
     @database_response
     def insert_token(self, token_id: str, expires_in: DatetimeT, username: str) -> None:
         user_obj = self.get_user(username)
-        tok = self.models.Token(id=token_id, expires_in=expires_in, owner=user_obj)
-        self.db.session.add(tok)
+        token_obj = self.models.Token(id=token_id, expires_in=expires_in, owner=user_obj)
+        self.db.session.add(token_obj)
         self.db.session.commit()
 
     @database_response
     def delete_token(self, token: str) -> None:
         if not self.is_token_exists(token):
             return
-        tok = self.get_token(token)
-        self.db.session.delete(tok)
+        token_obj = self.get_token(token)
+        self.db.session.delete(token_obj)
         self.db.session.commit()
 
     @database_response
-    def insert_tournament(self, username, tournament_obj):
+    def insert_tournament(self, username: str, tournament_name: str) -> int:
         user_obj = self.get_user(username)
-        if self.is_tournament_exists_id(user_obj.id, tournament_obj.name):
+        if self.is_tournament_exists_id(user_obj.id, tournament_name):
             raise ObjectAlreadyExists("Tournament")
-        new_tournament = self.models.Tournament(name=tournament_obj.name, owner=user_obj)
+        new_tournament = self.models.Tournament(name=tournament_name, owner=user_obj)
         self.db.session.add(new_tournament)
         self.db.session.commit()
         return new_tournament.id
 
     @database_response
-    def get_tournaments(self, username):
-        u = self.get_user(username)
-        return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in u.tournaments]
+    def get_tournaments(self, username: str) -> List:
+        user_obj = self.get_user(username)
+        return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in user_obj.tournaments]
 
     @database_response
-    def insert_round(self, username, tournament_name, round_name):
-        if self.is_round_exists(username, tournament_name, round_name):
+    def insert_round(self, username: str, tournament_id: int, round_name: str) -> int:
+        user_obj = self.get_user(username)
+        if self.is_round_exists_id(user_obj.id, tournament_id, round_name):
             raise ObjectAlreadyExists("Round")
 
-        tournament = self.get_tournament(username, tournament_name)
-        new_round = self.models.Round(name=round_name,
-                                      tournament=tournament, results=Counter())
+        tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
+        new_round = self.models.Round(name=round_name, tournament=tournament_obj, results=Counter())
         self.db.session.add(new_round)
         self.db.session.commit()
         return new_round.id
@@ -323,13 +312,14 @@ class DBManager:
         self.db.session.commit()
 
     @database_response
-    def insert_player(self, username, tournament_name, name_first, name_second):
-        if (self.is_player_exists(username, tournament_name, name_first) or
-                self.is_player_exists(username, tournament_name, name_second)):
+    def insert_player(self, username: str, tournament_id: int, name_first: str, name_second: str):
+        user_obj = self.get_user(username)
+        if (self.is_player_exists_id(user_obj.id, tournament_id, name_first) or
+                self.is_player_exists_id(user_obj.id, tournament_id, name_second)):
             raise ObjectAlreadyExists("Player")
 
-        tournament = self.get_tournament(username, tournament_name)
-        new_player = self.models.Player(name_first=name_first, name_second=name_second, tournament=tournament)
+        tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
+        new_player = self.models.Player(name_first=name_first, name_second=name_second, tournament=tournament_obj)
         self.db.session.add(new_player)
         self.db.session.commit()
         return new_player.id

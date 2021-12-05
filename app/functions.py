@@ -13,8 +13,6 @@ from config import Config
 from exceptions import KnownException
 from app.db_manager import DBException
 from utils.utils import gen_token, full_stack
-from entities.user import User
-from entities.tournament import Tournament
 from utils import template_data  # FIXME: DEBUG only
 from flask import make_response
 from flask import Response
@@ -70,8 +68,8 @@ def status() -> Tuple[int, Dict]:  # TODO: rewrite to add meaningful information
     Get the server's state
     :return: 200, {'State': 'Active', 'API version': [str], 'DB manager': 'OK/FAILED'}
     """
-    code: int = 200
-    data: Dict = {'State': 'Active', 'API version': 'v1', 'DB manager': 'OK' if dbm.is_ok() else "FAILED"}
+    code = 200
+    data = {'State': 'Active', 'API version': 'v1', 'DB manager': 'OK' if dbm.is_ok() else "FAILED"}
     return code, data
 
 
@@ -91,14 +89,14 @@ def login(username: str, password: str) -> Tuple[int, Dict]:
 
     tok_uuid, tok_exp = gen_token()
     dbm.insert_token(tok_uuid, tok_exp, username)
-    code: int = 201
-    data: Dict = {'Token': tok_uuid}
+    code = 201
+    data = {'Token': tok_uuid}
 
     return code, data
 
 
 @function_response
-def register(username, password):
+def register(username: str, password: str) -> Tuple[int, Dict]:
     """
     :param username: new username, should be unique and consist only of allowed characters
     :param password: password, should be strong
@@ -107,31 +105,31 @@ def register(username, password):
     TODO: add password check
     TODO: add allowed characters list and verification
     """
-    pass_hash: str = encrypt_password(password)
-    dbm.insert_user(User(username=username), pass_hash)
+    pass_hash = encrypt_password(password)
+    dbm.insert_user(username, pass_hash)
 
     return 201, {}
 
 
 @function_response
-def new_tournament(token, name):
+def new_tournament(token: str, name: str) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param name: name of new tournament to create
-    :return: 200, {"ID": tournament_id} on success; errors on error
+    :return: 201, {"ID": tournament_id} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    tournament_id = dbm.insert_tournament(username, Tournament(name=name))
+    tournament_id = dbm.insert_tournament(username, name)
 
-    return 200, {"ID": tournament_id}
+    return 201, {"ID": tournament_id}
 
 
 @function_response
-def get_tournaments(token):
+def get_tournaments(token: str) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :return: 200, {"tournaments": <list of tournaments>} if success; 403, {} if token is invalid
+    :return: 200, {"Tournaments": list of tournaments} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
@@ -141,19 +139,19 @@ def get_tournaments(token):
 
 
 @function_response
-def new_player(token, tournament_name, name_first, name_second):
+def new_player(token: str, tournament_id: int, name_first: str, name_second: str) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to which the players will be added
+    :param tournament_id: id of the tournament to which the players will be added
     :param name_first: name of the first player in pair
     :param name_second: name of the second player in pair
-    :return: 200, {} on success; 400, {} if one of players is already in tournament, 403, {} is not owner of tournament
+    :return: 201, {"ID": player_id} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    new_id = dbm.insert_player(username, tournament_name, name_first, name_second)
+    new_id = dbm.insert_player(username, tournament_id, name_first, name_second)
 
-    return 200, {"Id": new_id}
+    return 201, {"ID": new_id}
 
 
 @function_response
@@ -232,18 +230,18 @@ def delete_word(token, tournament_name, word_text):
 
 
 @function_response
-def new_round(token, tournament_name, round_name):
+def new_round(token: str, tournament_id: int, round_name: str) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to add round
+    :param tournament_id: id of the tournament to add round
     :param round_name: name of the round
-    :return: 200, {} on success; 400, {} if round with same name is already in tournament; 403, {} if not owner
+    :return: 200, {"ID": round id} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    new_id = dbm.insert_round(username, tournament_name, round_name)
+    new_id = dbm.insert_round(username, tournament_id, round_name)
 
-    return 200, {"Id": new_id}
+    return 200, {"ID": new_id}
 
 
 @function_response
@@ -629,10 +627,10 @@ def fill_with_example(secret_code):
         return 404, {}
 
     example_username = template_data.EXAMPLE_USER[0]
-    dbm.insert_user(User(username=example_username), encrypt_password(template_data.EXAMPLE_USER[1]))
+    dbm.insert_user(example_username, encrypt_password(template_data.EXAMPLE_USER[1]))
 
     example_tournament = template_data.EXAMPLE_TOURNAMENT_NAME
-    dbm.insert_tournament(example_username, Tournament(name=example_tournament))
+    dbm.insert_tournament(example_username, example_tournament)
 
     for round_name in template_data.EXAMPLE_ROUNDS_NAMES:
         dbm.insert_round(example_username, example_tournament, round_name)
