@@ -16,7 +16,7 @@ from utils.utils import gen_token, full_stack
 from utils import template_data  # FIXME: DEBUG only
 from flask import make_response
 from flask import Response
-from typing import Callable, Tuple, Dict
+from typing import Callable, Tuple, Dict, Counter
 
 
 def function_response(result_function: Callable[..., Tuple[int, Dict]]) -> Callable[..., Response]:
@@ -242,184 +242,168 @@ def new_round(token: str, tournament_id: int, round_name: str) -> Tuple[int, Dic
 
 
 @function_response
-def get_rounds(token, tournament_name):
+def get_rounds(token: str, tournament_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament
-    :return: 200, {"Rounds": <list of rounds>} on success; 403, {} if not the owner
+    :param tournament_id: id of the tournament
+    :return: 200, {"Rounds": list of rounds} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    rounds = dbm.get_rounds(username, tournament_name)
+    rounds = dbm.get_rounds(username, tournament_id)
 
     return 200, {"Rounds": rounds}
 
 
 @function_response
-def delete_round(token, tournament_name, round_name):
+def delete_round(token: str, round_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament from which the round will be deleted
-    :param round_name: name of the round to delete
-    :return: 200, {} on success; 400, {} if no such round in tournament, 403, {} if not owner of tournament
+    :param round_id: id of the round to delete
+    :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.delete_round(username, tournament_name, round_name)
+    dbm.delete_round(username, round_id)
 
     return 200, {}
 
 
 @function_response
-def add_player_to_round(token, tournament_name, round_name, pair_id):
+def add_player_to_round(token: str, round_id: int, pair_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
+    :param round_id: id of the round to interact with
     :param pair_id: id of the pair (player) to add into round
     :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.add_pair_id_to_round(username, tournament_name, round_name, pair_id)
+    dbm.add_pair_id_to_round(username, round_id, pair_id)
 
     return 200, {}
 
 
 @function_response
-def get_players_in_round(token, tournament_name, round_name):
+def get_players_in_round(token: str, round_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round from which take players
-    :return: 200, {"Players":<list of players in round>} on success; errors on error
+    :param round_id: id of the round from which take players
+    :return: 200, {"Players": list of players in round} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    players = dbm.get_players_in_round(username, tournament_name, round_name)
+    players = dbm.get_players_in_round(username, round_id)
 
     return 200, {"Players": players}
 
 
 @function_response
-def delete_player_from_round(token, tournament_name, round_name, pair_id):
+def delete_player_from_round(token: str, round_id: int, pair_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
+    :param round_id: id of the round to interact with
     :param pair_id: id of the pair (player) to delete from round
     :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    dbm.delete_player_from_round(username, tournament_name, round_name, pair_id)
+    dbm.delete_player_from_round(username, round_id, pair_id)
     return 200, {}
 
 
 @function_response
-def new_subround(token, tournament_name, round_name, subround_name):
+def new_subround(token: str, round_id: int, subround_name: str) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
+    :param round_id: id of the round to interact with
     :param subround_name: name of new subround
-    :return: 200, {"Id": <id>} on success, errors on error.
+    :return: 201, {"ID": <id>} on success, errors on error.
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    new_id = dbm.insert_subround(username, tournament_name, round_name, subround_name)
-    return 200, {"Id": new_id}
+    new_id = dbm.insert_subround(username, round_id, subround_name)
+    return 201, {"ID": new_id}
 
 
 @function_response
-def get_subrounds(token, tournament_name, round_name):
+def get_subrounds(token: str, round_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
-    :return: 200, {"Subrounds": <list of subrounds>} on success, errors on error.
+    :param round_id: id of the round to interact with
+    :return: 200, {"Subrounds": list of subrounds} on success, errors on error.
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    return 200, {"Subrounds": dbm.get_subrounds(username, tournament_name, round_name)}
+    return 200, {"Subrounds": dbm.get_subrounds(username, round_id)}
 
 
 @function_response
-def delete_subround(token, tournament_name, round_name, subround_name):
+def delete_subround(token: str, subround_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
-    :param subround_name: name of the subround to delete
+    :param subround_id: id of the subround to delete
     :return: 200, {} on success, errors on error.
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.delete_subround(username, tournament_name, round_name, subround_name)
+    dbm.delete_subround(username, subround_id)
 
     return 200, {}
 
 
 @function_response
-def add_player_to_subround(token, tournament_name, round_name, subround_name, pair_id):
+def add_player_to_subround(token: str, subround_id: int, pair_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
-    :param subround_name: name of the subround to interact with
+    :param subround_id: id of the subround to interact with
     :param pair_id: id of the pair (player) to add into round
     :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.add_pair_id_to_subround(username, tournament_name, round_name, subround_name, pair_id)
+    dbm.add_pair_id_to_subround(username, subround_id, pair_id)
 
     return 200, {}
 
 
 @function_response
-def get_players_in_subround(token, tournament_name, round_name, subround_name):
+def get_players_in_subround(token: str, subround_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round from which take players
-    :param subround_name: name of the subround from which take players
-    :return: 200, {"Players":<list of players in round>} on success,
+    :param subround_id: id of the subround from which take players
+    :return: 200, {"Players": list of players in round} on success,
     """
     username = token_auth(token)
-    players = dbm.get_players_in_subround(username, tournament_name, round_name, subround_name)
+    players = dbm.get_players_in_subround(username, subround_id)
 
     return 200, {"Players": players}
 
 
 @function_response
-def delete_player_from_subround(token, tournament_name, round_name, subround_name, pair_id):
+def delete_player_from_subround(token: str, subround_id: int, pair_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name of the round to interact with
-    :param subround_name: name of the subround to interact with
+    :param subround_id: id of the subround to interact with
     :param pair_id: id of the pair (player) to delete from round
     :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    dbm.delete_player_from_subround(username, tournament_name, round_name, subround_name, pair_id)
+    dbm.delete_player_from_subround(username, subround_id, pair_id)
     return 200, {}
 
 
 @function_response
-def add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subround_name,
-                                      words_difficulty, words_amount):
+def add_x_words_of_diff_y_to_subround(token: str, subround_id: int,
+                                      words_difficulty: int, words_amount: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name is someone reading this? interact with
-    :param subround_name: name of the subround to interact with
+    :param subround_id: id of the subround to interact with
     :param words_difficulty: difficulty of words to add
     :param words_amount: amount of words to add
     :return: 200, {} if added, errors if error
@@ -427,174 +411,158 @@ def add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subrou
     """
     username = token_auth(token)
 
-    dbm.add_x_words_of_diff_y_to_subround(username, tournament_name, round_name, subround_name, words_difficulty,
-                                          words_amount)
+    dbm.add_x_words_of_diff_y_to_subround(username, subround_id, words_difficulty, words_amount)
     return 200, {}
 
 
 @function_response
-def get_subround_words(token, tournament_name, round_name, subround_name):
+def get_subround_words(token: str, subround_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name is someone reading this? interact with
-    :param subround_name: name of the subround to interact with
-    :return: 200, {"Words": <list of words in subround>} on success, errors on error
+    :param subround_id: id of the subround to interact with
+    :return: 200, {"Words": list of words in subround} on success, errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    words = dbm.get_subround_words(username, tournament_name, round_name, subround_name)
+    words = dbm.get_subround_words(username, subround_id)
 
     return 200, {"Words": words}
 
 
 @function_response
-def split_subround_into_games(token, tournament_name, round_name, subround_name, games_amount):
+def split_subround_into_games(token: str, subround_id: int, games_amount: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name is someone reading this? interact with
-    :param subround_name: name of the subround to interact with
+    :param subround_id: id of the subround to interact with
     :param games_amount: amount of games to split round into
-    :return: 200, {"Ids": <list of IDs of games>} on success, errors on error
+    :return: 200, {"Games": list of IDs of games} on success, errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    games_ids = dbm.split_subround_into_games(username, tournament_name, round_name, subround_name, games_amount)
+    games_ids = dbm.split_subround_into_games(username, subround_id, games_amount)
 
-    return 200, {"Ids": games_ids}
+    return 200, {"Games": games_ids}
 
 
 @function_response
-def get_games(token, tournament_name, round_name, subround_name):
+def get_games(token: str, subround_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name is someone reading this? interact with
-    :param subround_name: name of the subround to interact with
-    :return: 200, {"Games": <list of IDs of games>} on success, errors on error
+    :param subround_id: id of the subround to interact with
+    :return: 200, {"Games": list of IDs of games} on success, errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    games_ids = dbm.get_games(username, tournament_name, round_name, subround_name)
+    games_ids = dbm.get_games(username, subround_id)
 
-    return 200, {"Ids": games_ids}
+    return 200, {"Games": games_ids}
 
 
 @function_response
-def undo_split_subround_into_games(token, tournament_name, round_name, subround_name):
+def undo_split_subround_into_games(token: str, subround_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to interact with
-    :param round_name: name is someone reading this? interact with
-    :param subround_name: name of the subround to interact with
+    :param subround_id: id of the subround to interact with
     :return: 200, {} on success, errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
 
-    dbm.undo_split_subround_into_games(username, tournament_name, round_name, subround_name)
+    dbm.undo_split_subround_into_games(username, subround_id)
 
     return 200, {}
 
 
 @function_response
-def get_game_players(token, tournament_name, game_id):
+def get_game_players(token: str, game_id: int) -> Tuple[int, Dict]:
     """
        :param token: session token
-       :param tournament_name: name of the tournament to interact with
        :param game_id: id of game which information to get
-       :return: 200, {"Players": <list_of_players>} on success, errors on error
+       :return: 200, {"Players": List of players} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    players = dbm.get_game_players(username, tournament_name, game_id)
+    players = dbm.get_game_players(username, game_id)
 
     return 200, {"Players": players}
 
 
 @function_response
-def set_game_result(token, tournament_name, game_id, result):
+def set_game_result(token: str, game_id: int, result: Counter) -> Tuple[int, Dict]:
     """
        :param token: session token
-       :param tournament_name: name of the tournament to interact with
        :param game_id: id of game which information to set
        :param result: result of game
-       :return: 200, {} on success, errors on error
+       :return: 201, {} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    dbm.set_game_result(username, tournament_name, game_id, result)
+    dbm.set_game_result(username, game_id, result)
 
-    return 200, {}
+    return 201, {}
 
 
 @function_response
-def get_game_result(token, tournament_name, game_id):
+def get_game_result(token: str, game_id: int) -> Tuple[int, Dict]:
     """
        :param token: session token
-       :param tournament_name: name of the tournament to interact with
        :param game_id: id of game which information to get
-       :return: 200, {"Result": <dict Player_id : result>} on success, errors on error
+       :return: 200, {"Result": Dict[Player_id : result]} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    game_result = dbm.get_game_result(username, tournament_name, game_id)
+    game_result = dbm.get_game_result(username, game_id)
 
     return 200, {"Result": game_result.most_common()}
 
 
 @function_response
-def delete_game_result(token, tournament_name, game_id):
+def delete_game_result(token: str, game_id: int) -> Tuple[int, Dict]:
     """
        :param token: session token
-       :param tournament_name: name of the tournament to interact with
        :param game_id: id of game which information to get
        :return: 200, {} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    dbm.delete_game_result(username, tournament_name, game_id)
+    dbm.delete_game_result(username, game_id)
 
     return 200, {}
 
 
 @function_response
-def get_subround_result(token, tournament_name, round_name, subround_name):
+def get_subround_result(token: str, subround_id: int) -> Tuple[int, Dict]:
     """
        :param token: session token
-       :param tournament_name: name of the tournament to interact with
-       :param round_name: name of round which information to get
-       :param subround_name: name of subround which information to get
-       :return: 200, {"Result": <dict Player_id : result>} on success, errors on error
+       :param subround_id: id of subround which information to get
+       :return: 200, {"Result": Dict[Player_id : result]} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    subround_result = dbm.get_subround_result(username, tournament_name, round_name, subround_name)
+    subround_result = dbm.get_subround_result(username, subround_id)
 
     return 200, {"Result": subround_result.most_common()}
 
 
 @function_response
-def get_round_result(token, tournament_name, round_name):
+def get_round_result(token: str, round_id: int) -> Tuple[int, Dict]:
     """
        :param token: session token
-       :param tournament_name: name of the tournament to interact with
-       :param round_name: name of round which information to get
-       :return: 200, {"Result": <dict Player_id : result>} on success, errors on error
+       :param round_id: id of round which information to get
+       :return: 200, {"Result": Dict[Player_id, result]} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    round_result = dbm.get_round_result(username, tournament_name, round_name)
+    round_result = dbm.get_round_result(username, round_id)
 
     return 200, {"Result": round_result.most_common()}
 
@@ -638,7 +606,7 @@ def fill_with_example(secret_code):
                             subround_name)
 
     for word, diff in template_data.EXAMPLE_WORDS:
-        dbm.insert_word(example_username, 0, word, diff)    # ???
+        dbm.insert_word(example_username, 0, word, diff)  # ???
 
     for p1, p2, ri, sri, ind in template_data.EXAMPLE_PLAYERS:
         dbm.insert_player(example_username, example_tournament, p1, p2)

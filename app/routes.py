@@ -101,197 +101,165 @@ def new_round():
 @app.route('/api/v1/rounds', methods=['GET'])
 def get_rounds():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    return functions.get_rounds(token, tournament_name)
+    tournament_id: int = int(request.get_json()["tournament_id"])
+    return functions.get_rounds(token, tournament_id)
 
 
 @app.route('/api/v1/rounds', methods=['DELETE'])
 def delete_round():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    return functions.delete_round(token, tournament_name, round_name)
+    round_id: int = int(request.get_json()["round_id"])
+    return functions.delete_round(token, round_id)
 
 
 @app.route('/api/v1/rounds/players', methods=['POST'])
 def add_player_to_round():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
+    round_id: int = int(request.get_json()["round_id"])
     pair_id: int = int(request.get_json()["player_id"])
-    return functions.add_player_to_round(token, tournament_name, round_name, pair_id)
+    return functions.add_player_to_round(token, round_id, pair_id)
 
 
 @app.route('/api/v1/rounds/players', methods=['GET'])
-def get_players_from_round():
+def get_players_in_round():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    return functions.get_players_in_round(token, tournament_name, round_name)
+    round_id: int = int(request.get_json()["round_id"])
+    return functions.get_players_in_round(token, round_id)
 
 
 @app.route('/api/v1/rounds/players', methods=['DELETE'])
 def delete_player_from_round():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
+    round_id: int = int(request.get_json()["round_id"])
     pair_id: int = int(request.get_json()["player_id"])
-    return functions.delete_player_from_round(token, tournament_name, round_name, pair_id)
+    return functions.delete_player_from_round(token, round_id, pair_id)
 
 
 @app.route('/api/v1/subrounds', methods=['POST'])
 def new_subround():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
+    round_id: int = int(request.get_json()["round_id"])
     subround_name: str = request.get_json()["subround_name"]
-    return functions.new_subround(token, tournament_name, round_name, subround_name)
+    return functions.new_subround(token, round_id, subround_name)
 
 
 @app.route('/api/v1/subrounds', methods=['GET'])
 def get_subrounds():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    return functions.get_subrounds(token, tournament_name, round_name)
+    round_id: int = int(request.get_json()["round_id"])
+    return functions.get_subrounds(token, round_id)
 
 
 @app.route('/api/v1/subrounds', methods=['DELETE'])
 def delete_subround():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
-    return functions.delete_subround(token, tournament_name, round_name, subround_name)
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.delete_subround(token, subround_id)
 
 
 @app.route('/api/v1/subrounds/players', methods=['POST'])
 def add_player_to_subround():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
+    subround_id: int = int(request.get_json()["subround_id"])
     pair_id: int = int(request.get_json()["player_id"])
-    return functions.add_player_to_subround(token, tournament_name, round_name, subround_name, pair_id)
+    return functions.add_player_to_subround(token, subround_id, pair_id)
 
 
 @app.route('/api/v1/subrounds/players', methods=['GET'])
 def get_players_from_subround():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
-    return functions.get_players_in_subround(token, tournament_name, round_name, subround_name)
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.get_players_in_subround(token, subround_id)
 
 
 @app.route('/api/v1/subrounds/player', methods=['DELETE'])
 def delete_player_from_subround():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
+    subround_id: int = int(request.get_json()["subround_id"])
     pair_id: int = int(request.get_json()["player_id"])
-    return functions.delete_player_from_subround(token, tournament_name, round_name, subround_name, pair_id)
+    return functions.delete_player_from_subround(token, subround_id, pair_id)
 
 
 @app.route('/api/v1/subrounds/words', methods=['POST'])
 def add_x_words_of_diff_y_to_subround():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
+    subround_id: int = int(request.get_json()["subround_id"])
     words_difficulty: int = int(request.get_json()["words_difficulty"])
     words_amount: int = int(request.get_json()["words_amount"])
-    return functions.add_x_words_of_diff_y_to_subround(token, tournament_name, round_name, subround_name,
-                                                       words_difficulty, words_amount)
+    return functions.add_x_words_of_diff_y_to_subround(token, subround_id, words_difficulty, words_amount)
 
 
 @app.route('/api/v1/subrounds/words', methods=['GET'])
 def get_subround_words():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
-    return functions.get_subround_words(token, tournament_name, round_name, subround_name)
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.get_subround_words(token, subround_id)
 
 
 @app.route('/api/v1/subrounds/split', methods=['POST'])
 def split_subround_into_games():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
+    subround_id: int = int(request.get_json()["subround_id"])
     games_amount: int = int(request.get_json()["games_amount"])
-    return functions.split_subround_into_games(token, tournament_name, round_name, subround_name, games_amount)
+    return functions.split_subround_into_games(token, subround_id, games_amount)
 
 
 @app.route('/api/v1/subrounds/games', methods=['GET'])
 def get_games():  # TODO: Not really meaningful
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
-    return functions.get_games(token, tournament_name, round_name, subround_name)
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.get_games(token, subround_id)
 
 
 @app.route('/api/v1/subrounds/split', methods=['DELETE'])
 def undo_split_subround_into_games():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
-    return functions.undo_split_subround_into_games(token, tournament_name, round_name, subround_name)
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.undo_split_subround_into_games(token, subround_id)
 
 
 @app.route('/api/v1/games/players', methods=['GET'])
 def get_game():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
     game_id: int = int(request.get_json()["game_id"])
-    return functions.get_game_players(token, tournament_name, game_id)
+    return functions.get_game_players(token, game_id)
 
 
 @app.route('/api/v1/games/results', methods=['POST'])
 def set_game_result():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
     game_id: int = int(request.get_json()["game_id"])
     result_with_s_keys: dict = json.loads(request.get_json()["result"])
     result = Counter(dict((int(key), val) for key, val in result_with_s_keys.items()))
-    return functions.set_game_result(token, tournament_name, game_id, result)
+    return functions.set_game_result(token, game_id, result)
 
 
 @app.route('/api/v1/games/results', methods=['GET'])
 def get_game_result():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
     game_id: int = int(request.get_json()["game_id"])
-    return functions.get_game_result(token, tournament_name, game_id)
+    return functions.get_game_result(token, game_id)
 
 
 @app.route('/api/v1/games/results', methods=['DELETE'])
 def delete_game_result():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
     game_id: int = int(request.get_json()["game_id"])
-    return functions.delete_game_result(token, tournament_name, game_id)
+    return functions.delete_game_result(token, game_id)
 
 
 @app.route('/api/v1/subrounds/results', methods=['GET'])
 def get_subround_result():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    subround_name: str = request.get_json()["subround_name"]
-    return functions.get_subround_result(token, tournament_name, round_name, subround_name)
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.get_subround_result(token, subround_id)
 
 
 @app.route('/api/v1/rounds/results', methods=['GET'])
 def get_round_result():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    round_name: str = request.get_json()["round_name"]
-    return functions.get_round_result(token, tournament_name, round_name)
+    round_id: int = int(request.get_json()["round_id"])
+    return functions.get_round_result(token, round_id)
 
 
 @app.route('/api/v1/admin/drop', methods=['DELETE'])
