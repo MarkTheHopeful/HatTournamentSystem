@@ -7,7 +7,7 @@ Decorator handles exceptions and returns the flask Response object
 
 import datetime
 from app.extensions import dbm
-from exceptions.UserExceptions import ObjectNotFound
+from exceptions.UserExceptions import ObjectNotFoundException
 from utils.encrypt import encrypt_password, check_password
 from config import Config
 from exceptions import KnownException
@@ -58,7 +58,7 @@ def token_auth(token: str) -> str:
 
     if exp_time < datetime.datetime.utcnow():
         dbm.delete_token(token)
-        raise ObjectNotFound("Token")  # TODO: seems not good, I guess
+        raise ObjectNotFoundException("Token")  # TODO: seems not good, I guess
     return username
 
 
@@ -85,7 +85,7 @@ def login(username: str, password: str) -> Tuple[int, Dict]:
     user_password_hash: str = dbm.get_password_hash(username)
 
     if not check_password(password, user_password_hash):
-        raise ObjectNotFound("User")
+        raise ObjectNotFoundException("User")
 
     tok_uuid, tok_exp = gen_token()
     dbm.insert_token(tok_uuid, tok_exp, username)
@@ -183,7 +183,7 @@ def delete_player(token: str, pair_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def new_word(token: str, tournament_id: int, word_text: str, word_difficulty: int):
+def new_word(token: str, tournament_id: int, word_text: str, word_difficulty: int) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param tournament_id: id of the tournament to which the word will be added
@@ -199,30 +199,29 @@ def new_word(token: str, tournament_id: int, word_text: str, word_difficulty: in
 
 
 @function_response
-def get_words(token, tournament_name):
+def get_words(token: str, tournament_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament
-    :return: 200, {"Words": <list of words>} on success; 403, {} if not the owner of tournament
+    :param tournament_id: id of the tournament
+    :return: 200, {"Words": list of words} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    words = dbm.get_words(username, tournament_name)
+    words = dbm.get_words(username, tournament_id)
 
     return 200, {"Words": words}
 
 
 @function_response
-def delete_word(token, tournament_name, word_text):
+def delete_word(token: str, word_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param tournament_name: name of the tournament to which the players will be added
-    :param word_text: word
-    :return: 200, {} on success; 400, {} if no such word in tournament, 403, {} if not owner of tournament
+    :param word_id: id of the word to delete
+    :return: 200, {} on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
     username = token_auth(token)
-    dbm.delete_word(username, tournament_name, word_text)
+    dbm.delete_word(username, word_id)
 
     return 200, {}
 

@@ -2,7 +2,8 @@ from typing import Tuple, Callable, Optional, List
 from flask_sqlalchemy import SQLAlchemy
 
 from exceptions import KnownException
-from exceptions.UserExceptions import LogicGameSizeException, LogicPlayersDontMatch, ObjectNotFound, ObjectAlreadyExists
+from exceptions.UserExceptions import LogicGameSizeException, LogicPlayersDontMatchException, ObjectNotFoundException, \
+    ObjectAlreadyExistsException, NotTheOwnerOfObjectException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 import entities.tournament
@@ -55,6 +56,7 @@ class DBManager:
     # HELPERS FUNCTIONS
     # FIXME: creates lots of objects only to check whether they are in db. Too bad!
 
+    # USER HELPERS
     def is_user_exists(self, username: str) -> bool:
         user_obj = self.models.User.query.filter_by(username=username).first()
         return user_obj is not None
@@ -62,9 +64,10 @@ class DBManager:
     def get_user(self, username: str):
         user_obj = self.models.User.query.filter_by(username=username).first()
         if user_obj is None:
-            raise ObjectNotFound("User")
+            raise ObjectNotFoundException("User")
         return user_obj
 
+    # TOKEN HELPERS
     def is_token_exists(self, token: str):
         token_obj = self.models.Token.query.filter_by(id=token).first()
         return token_obj is not None
@@ -72,58 +75,47 @@ class DBManager:
     def get_token(self, token: str):
         token_obj = self.models.Token.query.filter_by(id=token).first()
         if token_obj is None:
-            raise ObjectNotFound("Token")
+            raise ObjectNotFoundException("Token")
         return token_obj
 
-    def is_tournament_exists_id(self, user_id, tournament_name):
+    # TOURNAMENT_HELPERS
+    def is_tournament_exists_id(self, user_id: int, tournament_name: str) -> bool:
         tournament_obj = self.models.Tournament.query.filter_by(user_id=user_id, name=tournament_name).first()
         return tournament_obj is not None
 
-    def is_tournament_owner(self, username, tournament_id):
-        user_obj = self.get_user(username)
-        return self.models.Tournament.query.filter_by(id=tournament_id).first().user_id == user_obj.id
-
     def is_tournament_owner_id(self, user_id: int, tournament_id: int) -> bool:
-        return self.models.Tournament.query.filter_by(id=tournament_id).first().user_id == user_id
+        tournament_obj = self.models.Tournament.query.filter_by(id=tournament_id).first()
+        return tournament_obj is not None and tournament_obj.user_id == user_id
 
     def get_tournament_id(self, user_id: int, tournament_id: int):
         tournament_obj = self.models.Tournament.query.filter_by(id=tournament_id, user_id=user_id).first()
         if tournament_obj is None:
-            raise ObjectNotFound("Tournament")
+            raise ObjectNotFoundException("Tournament")
         return tournament_obj
 
-    def get_tournament(self, username, tournament_name):
-        user_obj = self.get_user(username)
-        tournament_obj = self.models.Tournament.query.filter((
-                (self.models.Tournament.user_id == user_obj.id) & (
-                self.models.Tournament.name == tournament_name))).first()
-        if tournament_obj is None:
-            raise ObjectNotFound("Tournament")
-        return tournament_obj
-
+    # ROUND HELPERS
     def is_round_exists_id(self, user_id: int, tournament_id: int, round_name: str) -> bool:
         if not self.is_tournament_owner_id(user_id, tournament_id):
-            return False
+            raise NotTheOwnerOfObjectException("Tournament")
         round_obj = self.models.Round.query.filter_by(name=round_name, tournament_id=tournament_id).first()
         return round_obj is not None
 
-    def get_round_id(self, user_id, round_id):
+    def is_round_owner_id(self, user_id: int, round_id: int) -> bool:
+        round_obj = self.models.Round.query.filter_by(id=round_id).first()
+        return round_obj is not None and round_obj.tournament.user_id == user_id
+
+    def get_round_id(self, user_id: int, round_id: int):
         round_obj = self.models.Round.query.filter_by(round_id=round_id).first()
-        if round_obj is None or round_obj.tournament.user_id != user_id:
-            raise ObjectNotFound("Round")
+        if round_obj is None:
+            raise ObjectNotFoundException("Round")
+        if not self.is_tournament_owner_id(user_id, round_obj.tournament_id):
+            raise NotTheOwnerOfObjectException("Tournament")
         return round_obj
 
-    def get_round(self, username, tournament_name, round_name):
-        t = self.get_tournament(username, tournament_name)
-        r = self.models.Round.query.filter(
-            (self.models.Round.name == round_name) & (self.models.Round.tournament_id == t.id)).first()
-        if r is None:
-            raise ObjectNotFound("Round")
-        return r
-
+    # PLAYER HELPERS
     def is_player_exists_id(self, user_id: int, tournament_id: int, player_name: str) -> bool:  # FIXME: will change
         if not self.is_tournament_owner_id(user_id, tournament_id):
-            return False
+            raise NotTheOwnerOfObjectException("Tournament")
 
         p = self.models.Player.query.filter(((self.models.Player.tournament_id == tournament_id) & (
                 (self.models.Player.name_first == player_name) |
@@ -131,50 +123,58 @@ class DBManager:
         return p is not None
 
     def get_pair_id(self, user_id: int, pair_id: int):
-        pair_obj = self.models.Player.query.filter_by(id=pair_id)
-        if pair_obj is None or not self.is_tournament_owner_id(user_id, pair_obj.tournament_id):
-            raise ObjectNotFound("Player")
+        pair_obj = self.models.Player.query.filter_by(id=pair_id).first()
+        if pair_obj is None:
+            raise ObjectNotFoundException("Player")
+        if not self.is_tournament_owner_id(user_id, pair_obj.tournament_id):
+            raise NotTheOwnerOfObjectException("Tournament")
         return pair_obj
 
+    # WORD HELPERS
     def is_word_exists_id(self, user_id: int, tournament_id: int, word_text: str) -> bool:
-        word_obj = self.models.Word.query.filter_by(text=word_text, tournament_id=tournament_id)
-        return word_obj is not None and self.is_tournament_owner_id(user_id, tournament_id)
+        if not self.is_tournament_owner_id(user_id, tournament_id):
+            raise NotTheOwnerOfObjectException("Tournament")
+        word_obj = self.models.Word.query.filter_by(text=word_text).first()
+        return word_obj is not None
 
-    def is_word_exists(self, username, tournament_name, word_text):
-        t = self.get_tournament(username, tournament_name)
-        w = self.models.Word.query.filter((self.models.Word.text == word_text) & (
-                self.models.Word.tournament_id == t.id)).first()
-        return w is not None
+    def get_word_id(self, user_id: int, word_id: int):
+        word_obj = self.models.Word.query.filter_by(id=word_id).first()
+        if word_obj is None:
+            raise ObjectNotFoundException("Word")
+        if not self.is_tournament_owner_id(user_id, word_obj.tournament_id):
+            raise NotTheOwnerOfObjectException("Tournament")
+        return word_obj
 
-    def get_word(self, username, tournament_name, word_text):
-        t = self.get_tournament(username, tournament_name)
-        w = self.models.Word.query.filter((self.models.Word.text == word_text) & (
-                self.models.Word.tournament_id == t.id)).first()
-        if w is None:
-            raise ObjectNotFound("Word")
-        return w
+    # SUBROUND HELPERS
+    def is_subround_exists_id(self, user_id: int, round_id: int, subround_name: str) -> bool:
+        if not self.is_round_owner_id(user_id, round_id):
+            raise NotTheOwnerOfObjectException("Round")
+        subround_obj = self.models.Subround.query.filter_by(name=subround_name, round_id=round_id).first()
+        return subround_obj is not None
 
-    def is_subround_exists(self, username, tournament_name, round_name, subround_name):
-        r = self.get_round(username, tournament_name, round_name)
-        s = self.models.Subround.query.filter((self.models.Subround.name == subround_name) & (
-                self.models.Subround.round_id == r.id)).first()
-        return s is not None
+    def is_subround_owner_id(self, user_id: int, subround_id: int) -> bool:
+        subround_obj = self.models.Subround.query.filter_by(id=subround_id).first()
+        return subround_obj is not None and subround_obj.round.tournament.user_id == user_id
 
-    def get_subround(self, username, tournament_name, round_name, subround_name):
-        r = self.get_round(username, tournament_name, round_name)
-        s = self.models.Subround.query.filter((self.models.Subround.name == subround_name) & (
-                self.models.Subround.round_id == r.id)).first()
-        if s is None:
-            raise ObjectNotFound("Subround")
-        return s
+    def get_subround_id(self, user_id: int, subround_id: int):
+        subround_obj = self.models.Subround.query.filter_by(id=subround_id).first()
+        if subround_obj is None:
+            raise ObjectNotFoundException("Subround")
+        if not self.is_round_owner_id(user_id, subround_obj.round_id):
+            raise NotTheOwnerOfObjectException("Round")
+        return subround_obj
 
-    def get_x_random_words_with_difficulty_y(self, username, tournament_name, amount, difficulty):
-        t = self.get_tournament(username, tournament_name)
-        words = self.models.Word.query.filter_by(tournament_id=t.id, difficulty=difficulty, subround_id=None).order_by(
+    # WORD TAKER AND LINKER
+
+    def get_x_random_words_with_difficulty_y_id(self, user_id: int, tournament_id: int, amount: int, difficulty: int):
+        if not self.is_tournament_owner_id(user_id, tournament_id):
+            raise NotTheOwnerOfObjectException("Tournament")
+        words = self.models.Word.query.filter_by(tournament_id=tournament_id, difficulty=difficulty,
+                                                 subround_id=None).order_by(
             self.models.Word.random_seed).limit(amount).all()
 
         if len(words) < amount:
-            raise ObjectNotFound("Not enough words")
+            raise ObjectNotFoundException("Not enough words")
         return words
 
     def link_words_with_subround(self, subround_obj, words_list):
@@ -182,20 +182,25 @@ class DBManager:
         self.db.session.add(subround_obj)
         self.db.session.commit()
 
-    def is_game_exists(self, username, tournament_name, game_id):
-        t = self.get_tournament(username, tournament_name)
-        g = self.models.Game.query.filter_by(id=game_id).first()
+    # GAME HELPERS
 
-        return g is not None and g.subround.round.tournament.id == t.id
+    def is_game_exists_id(self, user_id: int, game_id: int) -> bool:
+        game_obj = self.models.Game.query.filter_by(id=game_id).first()
+        if game_obj is None:
+            return False
+        if not self.is_subround_owner_id(user_id, game_obj.subround_id):
+            raise NotTheOwnerOfObjectException("Subround")
+        return True
 
-    def get_game(self, username, tournament_name, game_id):
-        t = self.get_tournament(username, tournament_name)
-        g = self.models.Game.query.filter_by(id=game_id).first()
+    def get_game_id(self, user_id: int, game_id: int):
+        game_obj = self.models.Game.query.filter_by(id=game_id).first()
+        if game_obj is None:
+            raise ObjectNotFoundException("Game")
+        if not self.is_subround_owner_id(user_id, game_obj.subround_id):
+            raise NotTheOwnerOfObjectException("Subround")
+        return game_obj
 
-        if g is None or g.subround.round.tournament.id != t.id:
-            raise ObjectNotFound("Game")
-
-        return g
+    # RESULTS HELPERS
 
     def update_add_results_push_from_game(self, game_obj):
         subround_obj = game_obj.subround
@@ -240,7 +245,7 @@ class DBManager:
             self.db.session.add(new_user)
             self.db.session.commit()
         except IntegrityError:
-            raise ObjectAlreadyExists("User")
+            raise ObjectAlreadyExistsException("User")
 
     @database_response
     def get_password_hash(self, username: str) -> str:
@@ -271,7 +276,7 @@ class DBManager:
     def insert_tournament(self, username: str, tournament_name: str) -> int:
         user_obj = self.get_user(username)
         if self.is_tournament_exists_id(user_obj.id, tournament_name):
-            raise ObjectAlreadyExists("Tournament")
+            raise ObjectAlreadyExistsException("Tournament")
         new_tournament = self.models.Tournament(name=tournament_name, owner=user_obj)
         self.db.session.add(new_tournament)
         self.db.session.commit()
@@ -286,7 +291,7 @@ class DBManager:
     def insert_round(self, username: str, tournament_id: int, round_name: str) -> int:
         user_obj = self.get_user(username)
         if self.is_round_exists_id(user_obj.id, tournament_id, round_name):
-            raise ObjectAlreadyExists("Round")
+            raise ObjectAlreadyExistsException("Round")
 
         tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
         new_round = self.models.Round(name=round_name, tournament=tournament_obj, results=Counter())
@@ -295,22 +300,24 @@ class DBManager:
         return new_round.id
 
     @database_response
-    def get_rounds(self, username, tournament_name):
-        tournament = self.get_tournament(username, tournament_name)
+    def get_rounds(self, username: str, tournament_id: int) -> List:
+        user_obj = self.get_user(username)
+        tournament = self.get_tournament_id(user_obj.id, tournament_id)
         return [entities.round.Round(dbu=r).to_base_info_dict() for r in tournament.rounds]
 
     @database_response
-    def delete_round(self, username, tournament_name, round_name):
-        round_to_delete = self.get_round(username, tournament_name, round_name)
+    def delete_round(self, username: str, round_id: int) -> None:
+        user_obj = self.get_user(username)
+        round_to_delete = self.get_round_id(user_obj.id, round_id)
         self.db.session.delete(round_to_delete)
         self.db.session.commit()
 
     @database_response
-    def insert_player(self, username: str, tournament_id: int, name_first: str, name_second: str):
+    def insert_player(self, username: str, tournament_id: int, name_first: str, name_second: str) -> int:
         user_obj = self.get_user(username)
         if (self.is_player_exists_id(user_obj.id, tournament_id, name_first) or
                 self.is_player_exists_id(user_obj.id, tournament_id, name_second)):
-            raise ObjectAlreadyExists("Player")
+            raise ObjectAlreadyExistsException("Player")
 
         tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
         new_player = self.models.Player(name_first=name_first, name_second=name_second, tournament=tournament_obj)
@@ -335,7 +342,7 @@ class DBManager:
     def insert_word(self, username: str, tournament_id: int, word_text: str, word_difficulty: int) -> int:
         user_obj = self.get_user(username)
         if self.is_word_exists_id(user_obj.id, tournament_id, word_text):
-            raise ObjectAlreadyExists("Word")
+            raise ObjectAlreadyExistsException("Word")
 
         tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
         new_word = self.models.Word(text=word_text, difficulty=word_difficulty, tournament=tournament_obj,
@@ -345,20 +352,22 @@ class DBManager:
         return new_word.id
 
     @database_response
-    def get_words(self, username, tournament_name):
-        tournament = self.get_tournament(username, tournament_name)
-        return [entities.word.Word(dbu=w).to_base_info_dict() for w in tournament.words]
+    def get_words(self, username: str, tournament_id: int) -> List:
+        user_obj = self.get_user(username)
+        tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
+        return [entities.word.Word(dbu=w).to_base_info_dict() for w in tournament_obj.words]
 
     @database_response
-    def delete_word(self, username, tournament_name, word_text):
-        word_to_delete = self.get_word(username, tournament_name, word_text)
+    def delete_word(self, username: str, word_id: int) -> None:
+        user_obj = self.get_user(username)
+        word_to_delete = self.get_word_id(user_obj.id, word_id)
         self.db.session.delete(word_to_delete)
         self.db.session.commit()
 
     @database_response
-    def add_pair_id_to_round(self, username, tournament_name, round_name, pair_id):
-        round_obj = self.get_round(username, tournament_name, round_name)
+    def add_pair_id_to_round(self, username: str, round_id: int, pair_id: int) -> None:
         user_obj = self.get_user(username)
+        round_obj = self.get_round_id(user_obj.id, round_id)
         player_obj = self.get_pair_id(user_obj.id, pair_id)
         try:  # FIXME: Find some better way to check
             round_obj.players.append(player_obj)
@@ -368,20 +377,21 @@ class DBManager:
             self.db.session.add(round_obj)
             self.db.session.commit()
         except IntegrityError as e:
-            raise ObjectAlreadyExists("Player in round")
+            raise ObjectAlreadyExistsException("Player in round")
 
     @database_response
-    def get_players_in_round(self, username, tournament_name, round_name):
-        round_obj = self.get_round(username, tournament_name, round_name)
+    def get_players_in_round(self, username: str, round_id: int) -> List:
+        user_obj = self.get_user(username)
+        round_obj = self.get_round_id(user_obj.id, round_id)
         return [entities.player.Player(dbu=p).to_base_info_dict() for p in
                 self.db.session.query(self.models.Round).filter_by(id=round_obj.id).first().players]
 
     @database_response
-    def delete_player_from_round(self, username, tournament_name, round_name, pair_id):
-        round_obj = self.get_round(username, tournament_name, round_name)
+    def delete_player_from_round(self, username: str, round_id: int, pair_id: int) -> None:
         user_obj = self.get_user(username)
+        round_obj = self.get_round_id(user_obj.id, round_id)
         player_obj = self.get_pair_id(user_obj.id, pair_id)
-        try:
+        try:  # FIXME: Duplicated code
             round_obj.players.remove(player_obj)
             results = Counter(round_obj.results)
             del results[pair_id]
@@ -389,34 +399,37 @@ class DBManager:
             self.db.session.add(round_obj)
             self.db.session.commit()
         except StaleDataError as e:
-            raise ObjectNotFound("Player in round")
+            raise ObjectNotFoundException("Player in round")
 
     @database_response
-    def insert_subround(self, username, tournament_name, round_name, subround_name):
-        if self.is_subround_exists(username, tournament_name, round_name, subround_name):
-            raise ObjectAlreadyExists("Subround")
+    def insert_subround(self, username: str, round_id: int, subround_name: str) -> int:
+        user_obj = self.get_user(username)
+        if self.is_subround_exists_id(user_obj.id, round_id, subround_name):
+            raise ObjectAlreadyExistsException("Subround")
 
-        round_obj = self.get_round(username, tournament_name, round_name)
+        round_obj = self.get_round_id(user_obj.id, round_id)
         new_subround = self.models.Subround(name=subround_name, round=round_obj, results=Counter())
         self.db.session.add(new_subround)
         self.db.session.commit()
         return new_subround.id
 
     @database_response
-    def get_subrounds(self, username, tournament_name, round_name):
-        round_obj = self.get_round(username, tournament_name, round_name)
+    def get_subrounds(self, username: str, round_id: int) -> List:
+        user_obj = self.get_user(username)
+        round_obj = self.get_round_id(user_obj.id, round_id)
         return [SubroundE(dbu=p).to_base_info_dict() for p in round_obj.subrounds]
 
     @database_response
-    def delete_subround(self, username, tournament_name, round_name, subround_name):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def delete_subround(self, username: str, subround_id: int) -> None:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         self.db.session.delete(subround_obj)
         self.db.session.commit()
 
     @database_response
-    def add_pair_id_to_subround(self, username, tournament_name, round_name, subround_name, pair_id):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def add_pair_id_to_subround(self, username: str, subround_id: int, pair_id: int) -> None:
         user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         player_obj = self.get_pair_id(user_obj.id, pair_id)
         try:  # FIXME: Find some better way to check
             subround_obj.players.append(player_obj)
@@ -426,20 +439,21 @@ class DBManager:
             self.db.session.add(subround_obj)
             self.db.session.commit()
         except IntegrityError as e:
-            raise ObjectAlreadyExists("Player in subround")
+            raise ObjectAlreadyExistsException("Player in subround")
 
     @database_response
-    def get_players_in_subround(self, username, tournament_name, round_name, subround_name):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def get_players_in_subround(self, username: str, subround_id: int) -> List:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         return [entities.player.Player(dbu=p).to_base_info_dict() for p in
                 self.db.session.query(self.models.Subround).filter_by(id=subround_obj.id).first().players]
 
     @database_response
-    def delete_player_from_subround(self, username, tournament_name, round_name, subround_name, pair_id):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def delete_player_from_subround(self, username: str, subround_id: int, pair_id: int) -> None:
         user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         player_obj = self.get_pair_id(user_obj.id, pair_id)
-        try:
+        try:  # FIXME: Duplicated code
             subround_obj.players.remove(player_obj)
             results = Counter(subround_obj.results)
             del results[pair_id]
@@ -447,25 +461,29 @@ class DBManager:
             self.db.session.add(subround_obj)
             self.db.session.commit()
         except StaleDataError as e:
-            raise ObjectNotFound("Player in round")
+            raise ObjectNotFoundException("Player in round")
 
     @database_response
-    def add_x_words_of_diff_y_to_subround(self, username, tournament_name, round_name, subround_name, words_difficulty,
-                                          words_amount):
-        words = self.get_x_random_words_with_difficulty_y(username, tournament_name, words_amount, words_difficulty)
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def add_x_words_of_diff_y_to_subround(self, username: str, subround_id: int, words_difficulty: int,
+                                          words_amount: int) -> None:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
+        words = self.get_x_random_words_with_difficulty_y_id(user_obj.id, subround_obj.round.tournament_id,
+                                                             words_amount, words_difficulty)
         self.link_words_with_subround(subround_obj, words)
 
     @database_response
-    def get_subround_words(self, username, tournament_name, round_name, subround_name):
-        s = self.get_subround(username, tournament_name, round_name, subround_name)
+    def get_subround_words(self, username: str, subround_id: int) -> List:
+        user_obj = self.get_user(username)
+        s = self.get_subround_id(user_obj.id, subround_id)
         return [entities.word.Word(dbu=w).to_base_info_dict() for w in s.words]
 
     @database_response
-    def split_subround_into_games(self, username, tournament_name, round_name, subround_name, games_amount):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def split_subround_into_games(self, username: str, subround_id: int, games_amount: int) -> List[int]:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         if subround_obj.games.count() > 0:
-            raise ObjectAlreadyExists("Subround already split")
+            raise ObjectAlreadyExistsException("Subround already split")
         if subround_obj.players.count() < 2 * games_amount:
             raise LogicGameSizeException()
         players_parts = shuffle_and_split_near_equal_parts(subround_obj.players.all(),
@@ -483,32 +501,36 @@ class DBManager:
         return final_ids
 
     @database_response
-    def get_games(self, username, tournament_name, round_name, subround_name):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def get_games(self, username: str, subround_id: int) -> List[int]:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         games_ids = [game.id for game in subround_obj.games]
         return games_ids
 
     @database_response
-    def undo_split_subround_into_games(self, username, tournament_name, round_name, subround_name):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def undo_split_subround_into_games(self, username: str, subround_id: int) -> None:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         if subround_obj.games.count() == 0:
-            raise ObjectNotFound("Subround not split")
+            raise ObjectNotFoundException("Subround not split")
         for game in subround_obj.games:
             self.db.session.delete(game)  # I believe in cascade delete
         self.db.session.commit()
 
     @database_response
-    def get_game_players(self, username, tournament_name, game_id):
-        game_obj = self.get_game(username, tournament_name, game_id)
+    def get_game_players(self, username: str, game_id: int) -> List:
+        user_obj = self.get_user(username)
+        game_obj = self.get_game_id(user_obj.id, game_id)
         return [entities.player.Player(dbu=p).to_base_info_dict() for p in game_obj.players]
 
     @database_response
-    def set_game_result(self, username, tournament_name, game_id, result):
-        game_obj = self.get_game(username, tournament_name, game_id)
+    def set_game_result(self, username: str, game_id: int, result: Counter) -> None:
+        user_obj = self.get_user(username)
+        game_obj = self.get_game_id(user_obj.id, game_id)
         if game_obj.results_set:
-            raise ObjectAlreadyExists("Game results")
+            raise ObjectAlreadyExistsException("Game results")
         if result.keys() != set([p.id for p in game_obj.players]):
-            raise LogicPlayersDontMatch()
+            raise LogicPlayersDontMatchException()
         game_obj.results_set = True
         game_obj.results = result
         self.db.session.add(game_obj)
@@ -516,34 +538,38 @@ class DBManager:
         self.update_add_results_push_from_game(game_obj)
 
     @database_response
-    def get_game_result(self, username, tournament_name, game_id):
-        game_obj = self.get_game(username, tournament_name, game_id)
+    def get_game_result(self, username: str, game_id: int) -> Counter:
+        user_obj = self.get_user(username)
+        game_obj = self.get_game_id(user_obj.id, game_id)
         if not game_obj.results_set:
-            raise ObjectNotFound("Game results")
+            raise ObjectNotFoundException("Game results")
         return game_obj.results
 
     @database_response
-    def delete_game_result(self, username, tournament_name, game_id):
-        game_obj = self.get_game(username, tournament_name, game_id)
+    def delete_game_result(self, username: str, game_id: int) -> None:
+        user_obj = self.get_user(username)
+        game_obj = self.get_game_id(user_obj.id, game_id)
         if not game_obj.results_set:
-            raise ObjectNotFound("Game results")
+            raise ObjectNotFoundException("Game results")
         self.update_subtract_results_push_from_game(game_obj)
         game_obj.results_set = False
         self.db.session.add(game_obj)
         self.db.session.commit()
 
     @database_response
-    def get_subround_result(self, username, tournament_name, round_name, subround_name):
-        subround_obj = self.get_subround(username, tournament_name, round_name, subround_name)
+    def get_subround_result(self, username: str, subround_id: int) -> Counter:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
         if subround_obj.results is None:
-            raise ObjectNotFound("Game results")
+            raise ObjectNotFoundException("Game results")
         return subround_obj.results
 
     @database_response
-    def get_round_result(self, username, tournament_name, round_name):
-        round_obj = self.get_round(username, tournament_name, round_name)
+    def get_round_result(self, username: str, round_id: int) -> Counter:
+        user_obj = self.get_user(username)
+        round_obj = self.get_round_id(user_obj.id, round_id)
         if round_obj.results is None:
-            raise ObjectNotFound("Game results")
+            raise ObjectNotFoundException("Game results")
         return round_obj.results
 
     @database_response

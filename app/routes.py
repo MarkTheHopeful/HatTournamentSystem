@@ -79,16 +79,15 @@ def new_word():
 @app.route('/api/v1/words', methods=['GET'])
 def get_words():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    return functions.get_words(token, tournament_name)
+    tournament_id: int = int(request.get_json()["tournament_id"])
+    return functions.get_words(token, tournament_id)
 
 
 @app.route('/api/v1/words', methods=['DELETE'])
 def delete_word():
     token: str = request.get_json()["token"]
-    tournament_name: str = request.get_json()["tournament_name"]
-    word_text: str = request.get_json()["word_text"]
-    return functions.delete_word(token, tournament_name, word_text)
+    word_id: int = int(request.get_json()["word_id"])
+    return functions.delete_word(token, word_id)
 
 
 @app.route('/api/v1/rounds', methods=['POST'])
