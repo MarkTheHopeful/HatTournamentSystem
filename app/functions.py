@@ -1,11 +1,9 @@
-# There the functions are being implemented.
-# Then the routes.py will use them
-# The functions always produce output as JSON
-# The format is: {code: CODE, state: STATE, data: {JSON}}, where code is the status code    # FIXME: outdated
-# State is the description of the code
-# And the data is the product, which the function returns
-# TODO: update documentation
-
+"""
+Query functions are implemented in this file
+Used by the file routes.py
+Before decorator functions return tuple "code, data" [Tuple[int, Dictionary]]
+Decorator handles exceptions and returns the flask Response object
+"""
 
 import datetime
 from app.extensions import dbm
@@ -19,12 +17,13 @@ from entities.user import User
 from entities.tournament import Tournament
 from utils import template_data  # FIXME: DEBUG only
 from flask import make_response
+from flask import Response
+from typing import Callable, Tuple, Dict
 
 
-# FIXME: Now this thing handles all the exceptions
-def function_response(result_function):
+def function_response(result_function: Callable[..., Tuple[int, Dict]]) -> Callable[..., Response]:
     """
-    :param result_function: function to wrap, have to return code (Int) and data (JSON)
+    :param result_function: function to wrap, returns code (Int) and data (JSON)
     :return: wrapped function, input stays same, exceptions handled, output converted to str(Response)
     Wrapper for all functions in routes
     Gets code and data from the wrapped function and returns a [[app.functions.Response]] object, casted to string
@@ -33,18 +32,18 @@ def function_response(result_function):
     Catches all other exceptions with error code 500
     """
 
-    def wrapped(*args, **kwargs):
-        status_code = 500
+    def wrapped(*args, **kwargs) -> Response:
         try:
             status_code, data = result_function(*args, **kwargs)
         except DBException as e:
+            status_code = 500
             data = {"Error": str(e), "Stack": full_stack()}
         except KnownException as e:
             status_code = e.code
             data = {"Message": e.message}
         except Exception as e:
+            status_code = 500
             data = {"Error": str(e), "Stack": full_stack()}
-            print(e)
         response = make_response(data, status_code)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -52,10 +51,10 @@ def function_response(result_function):
     return wrapped
 
 
-def token_auth(token):
+def token_auth(token: str) -> str:
     """
-    :param token: user token, string
-    :return: username, if token exists and the token is not outdated, otherwise throws DBObjectNotFound("Token")
+    :param token: user token
+    :return: username, if token is valid, otherwise throws ObjectNotFound("Token")
     """
     username, exp_time = dbm.get_username_and_exptime_by_token(token)
 
@@ -66,35 +65,34 @@ def token_auth(token):
 
 
 @function_response
-def status():  # TODO: rewrite to add meaningful information
+def status() -> Tuple[int, Dict]:  # TODO: rewrite to add meaningful information
     """
     Get the server's state
-    :return: 200, 'State' : 'Ok/Failed', 'API version', 'DB manager' : 'Ok/FAILED', 'Game manager': 'Ok/FAILED',
-     'Amount of games', 'Length of queue';
+    :return: 200, {'State': 'Active', 'API version': [str], 'DB manager': 'OK/FAILED'}
     """
-    code = 200
-    data = {'State': 'Active', 'API version': 'v1', 'DB manager': 'Ok' if dbm.is_ok() else "FAILED"}
+    code: int = 200
+    data: Dict = {'State': 'Active', 'API version': 'v1', 'DB manager': 'OK' if dbm.is_ok() else "FAILED"}
     return code, data
 
 
 @function_response
-def login(username, password):
+def login(username: str, password: str) -> Tuple[int, Dict]:
     """
     :param username: not empty, should be real username
     :param password: not empty, should be user's password
-    :return: 404, {} if there is no user with such credentials; 200, {'Token': <token>} if there is
+    :return: 201, {'Token': <token>} on success, errors otherwise
     Throws exceptions, but they are handled in wrapper
     """
 
-    u_hash = dbm.get_password_hash(username)
+    user_password_hash: str = dbm.get_password_hash(username)
 
-    if not check_password(password, u_hash):
+    if not check_password(password, user_password_hash):
         raise ObjectNotFound("User")
 
     tok_uuid, tok_exp = gen_token()
     dbm.insert_token(tok_uuid, tok_exp, username)
-    code = 200
-    data = {'Token': tok_uuid}
+    code: int = 201
+    data: Dict = {'Token': tok_uuid}
 
     return code, data
 
@@ -104,15 +102,15 @@ def register(username, password):
     """
     :param username: new username, should be unique and consist only of allowed characters
     :param password: password, should be strong
-    :return: 200, {} if success; 400, {} if username is already in use
+    :return: 201, {} if success; 400, {} if username is already in use
     Throws exceptions, but they are handled in wrapper
     TODO: add password check
     TODO: add allowed characters list and verification
     """
-    pass_hash = encrypt_password(password)
+    pass_hash: str = encrypt_password(password)
     dbm.insert_user(User(username=username), pass_hash)
 
-    return 200, {}
+    return 201, {}
 
 
 @function_response

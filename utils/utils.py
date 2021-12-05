@@ -1,7 +1,8 @@
-from typing import List, Set, Any
+from typing import List, Set, Any, Tuple
 import random
 
 import datetime
+from datetime import datetime as DatetimeT
 import uuid
 import traceback
 import sys
@@ -22,7 +23,7 @@ def full_stack():
     return stack_str
 
 
-def gen_token():
+def gen_token() -> Tuple[str, DatetimeT]:
     return uuid.uuid4().hex, datetime.datetime.utcnow() + datetime.timedelta(seconds=Config.TOKEN_LIFETIME_SEC)
 
 

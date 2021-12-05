@@ -1,3 +1,6 @@
+from typing import Tuple, Callable, Optional
+from flask_sqlalchemy import SQLAlchemy
+
 from exceptions import KnownException
 from exceptions.UserExceptions import LogicGameSizeException, LogicPlayersDontMatch, ObjectNotFound, ObjectAlreadyExists
 from sqlalchemy.exc import IntegrityError
@@ -7,6 +10,7 @@ import entities.player
 import entities.word
 import entities.round
 from collections import Counter
+from datetime import datetime as DatetimeT
 from entities.subround import Subround as SubroundE  # FIXME: differs for weird reasons
 
 # FIXME: too many duplicated lines!
@@ -14,32 +18,34 @@ from utils.utils import gen_rand_key, shuffle_and_split_near_equal_parts
 
 
 class DBException(KnownException):
-    def __init__(self, code=500, message="Unknown DB error"):
+    def __init__(self, code: int = 500, message: str = "Unknown DB error"):
         self.code = code
         self.message = message
         super().__init__(code, message)
 
 
-def database_response(database_fun):  # FIXME: Seems useless
+def database_response(database_fun: Callable) -> Callable:  # FIXME: Seems useless
     def wrapped(*args, **kwargs):
         try:
             result = database_fun(*args, **kwargs)
         except KnownException as e:
             raise e
         except Exception as e:
-            raise DBException(message=str(e))
+            raise DBException(500, str(e))
         return result
 
     return wrapped
 
 
 class DBManager:
-    db = None
-    models = None
+
+    def __init__(self):
+        self.db: Optional[SQLAlchemy] = None
+        self.models = None
 
     # BASE FUNCTIONS
 
-    def init_db(self, db, models):
+    def init_db(self, db: SQLAlchemy, models):
         self.db = db
         self.models = models
 
@@ -59,11 +65,11 @@ class DBManager:
             raise ObjectNotFound("User")
         return u
 
-    def is_token_exists(self, token):
+    def is_token_exists(self, token: str):
         tok = self.models.Token.query.filter_by(id=token).first()
         return tok is not None
 
-    def get_token(self, token):
+    def get_token(self, token: str):
         tok = self.models.Token.query.filter_by(id=token).first()
         if tok is None:
             raise ObjectNotFound("Token")
@@ -214,7 +220,7 @@ class DBManager:
     # DATABASE RESPONSES
 
     @database_response
-    def insert_user(self, user_obj, pass_hash):
+    def insert_user(self, user_obj, pass_hash: str):
         new_user = self.models.User(username=user_obj.username, password_hash=pass_hash)
         try:
             self.db.session.add(new_user)
@@ -223,24 +229,24 @@ class DBManager:
             raise ObjectAlreadyExists("User")
 
     @database_response
-    def get_password_hash(self, username):
-        u = self.get_user(username)
-        return u.password_hash
+    def get_password_hash(self, username: str) -> str:
+        user_obj = self.get_user(username)
+        return user_obj.password_hash
 
     @database_response
-    def get_username_and_exptime_by_token(self, token):
-        tok = self.get_token(token)
-        return tok.owner.username, tok.expires_in
+    def get_username_and_exptime_by_token(self, token: str) -> Tuple[str, DatetimeT]:
+        token_obj = self.get_token(token)
+        return token_obj.owner.username, token_obj.expires_in
 
     @database_response
-    def insert_token(self, token_id, expires_in, username):
-        u = self.get_user(username)
-        tok = self.models.Token(id=token_id, expires_in=expires_in, owner=u)
+    def insert_token(self, token_id: str, expires_in: DatetimeT, username: str) -> None:
+        user_obj = self.get_user(username)
+        tok = self.models.Token(id=token_id, expires_in=expires_in, owner=user_obj)
         self.db.session.add(tok)
         self.db.session.commit()
 
     @database_response
-    def delete_token(self, token):
+    def delete_token(self, token: str) -> None:
         if not self.is_token_exists(token):
             return
         tok = self.get_token(token)
