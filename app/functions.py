@@ -596,22 +596,22 @@ def fill_with_example(secret_code):
     dbm.insert_user(example_username, encrypt_password(template_data.EXAMPLE_USER[1]))
 
     example_tournament = template_data.EXAMPLE_TOURNAMENT_NAME
-    dbm.insert_tournament(example_username, example_tournament)
+    tournament_id = dbm.insert_tournament(example_username, example_tournament)
+    round_ids = []
 
     for round_name in template_data.EXAMPLE_ROUNDS_NAMES:
-        dbm.insert_round(example_username, example_tournament, round_name)
+        round_ids.append(dbm.insert_round(example_username, tournament_id, round_name))
 
+    subround_ids = []
     for subround_name, round_ind in template_data.EXAMPLE_SUBROUNDS:
-        dbm.insert_subround(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[round_ind],
-                            subround_name)
+        subround_ids.append(dbm.insert_subround(example_username, round_ids[round_ind], subround_name))
 
     for word, diff in template_data.EXAMPLE_WORDS:
-        dbm.insert_word(example_username, 0, word, diff)  # ???
+        dbm.insert_word(example_username, tournament_id, word, diff)
 
     for p1, p2, ri, sri, ind in template_data.EXAMPLE_PLAYERS:
-        dbm.insert_player(example_username, example_tournament, p1, p2)
-        dbm.add_pair_id_to_round(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[ri], ind)
-        dbm.add_pair_id_to_subround(example_username, example_tournament, template_data.EXAMPLE_ROUNDS_NAMES[ri],
-                                    template_data.EXAMPLE_SUBROUNDS[sri][0], ind)
+        dbm.insert_player(example_username, tournament_id, p1, p2)
+        dbm.add_pair_id_to_round(example_username, round_ids[ri], ind)
+        dbm.add_pair_id_to_subround(example_username, subround_ids[sri], ind)
 
     return 200, {}

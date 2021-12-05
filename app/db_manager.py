@@ -105,7 +105,7 @@ class DBManager:
         return round_obj is not None and round_obj.tournament.user_id == user_id
 
     def get_round_id(self, user_id: int, round_id: int):
-        round_obj = self.models.Round.query.filter_by(round_id=round_id).first()
+        round_obj = self.models.Round.query.filter_by(id=round_id).first()
         if round_obj is None:
             raise ObjectNotFoundException("Round")
         if not self.is_tournament_owner_id(user_id, round_obj.tournament_id):
