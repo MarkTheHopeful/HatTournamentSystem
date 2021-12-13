@@ -6,7 +6,6 @@ Decorator handles exceptions and returns the flask Response object
 """
 
 import datetime
-from collections import OrderedDict
 
 from app.extensions import dbm
 from exceptions.UserExceptions import ObjectNotFoundException
@@ -441,6 +440,22 @@ def add_player_to_subround(token: str, subround_id: int, pair_id: int) -> Tuple[
     """
     username = token_auth(token)
     dbm.add_pair_id_to_subround(username, subround_id, pair_id)
+
+    return 200, {}
+
+@function_response
+def add_players_to_subround(token: str, subround_id: int, pair_ids: List[int]) -> Tuple[int, Dict]:
+    """
+    :param token: session token
+    :param subround_id: id of the subround to interact with
+    :param pair_ids: ids of the pair (players) to add into round
+    :return: 200, {} on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    for pair_id in pair_ids:    # FIXME: if error occurs after some
+        dbm.add_pair_id_to_subround(username, subround_id, pair_id)
 
     return 200, {}
 

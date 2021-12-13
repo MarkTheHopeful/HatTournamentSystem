@@ -199,6 +199,14 @@ def add_player_to_subround():
     return functions.add_player_to_subround(token, subround_id, pair_id)
 
 
+@app.route('/api/v1/subround/players', methods=['POST'])
+def add_players_to_subround():
+    token: str = request.get_json()["token"]
+    subround_id: int = int(request.get_json()["subround_id"])
+    pair_ids: List[int] = list(map(int, request.get_json()["player_ids"]))
+    return functions.add_players_to_subround(token, subround_id, pair_ids)
+
+
 @app.route('/api/v1/subround/players', methods=['GET'])
 def get_players_from_subround():
     token: str = request.get_json()["token"]
