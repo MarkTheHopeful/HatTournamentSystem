@@ -1,5 +1,6 @@
 import json
 from collections import Counter
+from typing import List
 
 from flask import request
 import app.functions as functions
@@ -106,7 +107,7 @@ def delete_word():
 @app.route('/api/v1/round', methods=['POST'])
 def new_round():
     token: str = request.get_json()["token"]
-    tournament_id: int = int(request.get_json()["tournament_name"])
+    tournament_id: int = int(request.get_json()["tournament_id"])
     round_name: str = request.get_json()["round_name"]
     return functions.new_round(token, tournament_id, round_name)
 
@@ -137,6 +138,14 @@ def add_player_to_round():
     round_id: int = int(request.get_json()["round_id"])
     pair_id: int = int(request.get_json()["player_id"])
     return functions.add_player_to_round(token, round_id, pair_id)
+
+
+@app.route('/api/v1/round/players', methods=['POST'])
+def add_players_to_round():
+    token: str = request.get_json()["token"]
+    round_id: int = int(request.get_json()["round_id"])
+    pair_ids: List[int] = list(map(int, request.get_json()["player_ids"]))
+    return functions.add_players_to_round(token, round_id, pair_ids)
 
 
 @app.route('/api/v1/round/players', methods=['GET'])
@@ -229,28 +238,27 @@ def split_subround_into_games():
     return functions.split_subround_into_games(token, subround_id, games_amount)
 
 
-@app.route('/api/v1/subrounds/games', methods=['GET'])
-def get_games():  # TODO: Not really meaningful
+@app.route('/api/v1/subround/games', methods=['GET'])
+def get_games():  # TODO: Not really meaningful, idk what else to add
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
     return functions.get_games(token, subround_id)
 
 
-@app.route('/api/v1/subrounds/split', methods=['DELETE'])
+@app.route('/api/v1/subround/split', methods=['DELETE'])
 def undo_split_subround_into_games():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
     return functions.undo_split_subround_into_games(token, subround_id)
 
 
-@app.route('/api/v1/games/players', methods=['GET'])
-def get_game():
+@app.route('/api/v1/game/<game_id>', methods=['GET'])
+def get_game(game_id: int):
     token: str = request.get_json()["token"]
-    game_id: int = int(request.get_json()["game_id"])
-    return functions.get_game_players(token, game_id)
+    return functions.get_game_info(token, game_id)
 
 
-@app.route('/api/v1/games/results', methods=['POST'])
+@app.route('/api/v1/game/results', methods=['POST'])
 def set_game_result():
     token: str = request.get_json()["token"]
     game_id: int = int(request.get_json()["game_id"])
@@ -259,32 +267,53 @@ def set_game_result():
     return functions.set_game_result(token, game_id, result)
 
 
-@app.route('/api/v1/games/results', methods=['GET'])
+@app.route('/api/v1/game/results', methods=['GET'])
 def get_game_result():
     token: str = request.get_json()["token"]
     game_id: int = int(request.get_json()["game_id"])
     return functions.get_game_result(token, game_id)
 
 
-@app.route('/api/v1/games/results', methods=['DELETE'])
+@app.route('/api/v1/game/results/pretty', methods=['GET'])
+def get_game_result_pretty():
+    token: str = request.get_json()["token"]
+    game_id: int = int(request.get_json()["game_id"])
+    return functions.get_game_result(token, game_id, pretty=True)
+
+
+@app.route('/api/v1/game/results', methods=['DELETE'])
 def delete_game_result():
     token: str = request.get_json()["token"]
     game_id: int = int(request.get_json()["game_id"])
     return functions.delete_game_result(token, game_id)
 
 
-@app.route('/api/v1/subrounds/results', methods=['GET'])
+@app.route('/api/v1/subround/results', methods=['GET'])
 def get_subround_result():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
     return functions.get_subround_result(token, subround_id)
 
 
-@app.route('/api/v1/rounds/results', methods=['GET'])
+@app.route('/api/v1/subround/results/pretty', methods=['GET'])
+def get_subround_result_pretty():
+    token: str = request.get_json()["token"]
+    subround_id: int = int(request.get_json()["subround_id"])
+    return functions.get_subround_result(token, subround_id, pretty=True)
+
+
+@app.route('/api/v1/round/results', methods=['GET'])
 def get_round_result():
     token: str = request.get_json()["token"]
     round_id: int = int(request.get_json()["round_id"])
     return functions.get_round_result(token, round_id)
+
+
+@app.route('/api/v1/round/results/pretty', methods=['GET'])
+def get_round_result_pretty():
+    token: str = request.get_json()["token"]
+    round_id: int = int(request.get_json()["round_id"])
+    return functions.get_round_result(token, round_id, pretty=True)
 
 
 @app.route('/api/v1/admin/drop', methods=['DELETE'])

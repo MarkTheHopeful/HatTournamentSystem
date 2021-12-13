@@ -6,6 +6,8 @@ Decorator handles exceptions and returns the flask Response object
 """
 
 import datetime
+from collections import OrderedDict
+
 from app.extensions import dbm
 from exceptions.UserExceptions import ObjectNotFoundException
 from utils.encrypt import encrypt_password, check_password
@@ -16,7 +18,7 @@ from utils.utils import gen_token, full_stack
 from utils import template_data  # FIXME: DEBUG only
 from flask import make_response
 from flask import Response
-from typing import Callable, Tuple, Dict, Counter
+from typing import Callable, Tuple, Dict, Counter, List
 
 
 def function_response(result_function: Callable[..., Tuple[int, Dict]]) -> Callable[..., Response]:
@@ -327,6 +329,23 @@ def add_player_to_round(token: str, round_id: int, pair_id: int) -> Tuple[int, D
 
 
 @function_response
+def add_players_to_round(token: str, round_id: int, pair_ids: List[int]) -> Tuple[int, Dict]:
+    """
+    :param token: session token
+    :param round_id: id of the round to interact with
+    :param pair_ids: ids of the pair (players) to add into round
+    :return: 200, {} on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+
+    for pair_id in pair_ids:    # FIXME: if error occurs after some
+        dbm.add_pair_id_to_round(username, round_id, pair_id)
+
+    return 200, {}
+
+
+@function_response
 def get_players_in_round(token: str, round_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
@@ -533,18 +552,18 @@ def undo_split_subround_into_games(token: str, subround_id: int) -> Tuple[int, D
 
 
 @function_response
-def get_game_players(token: str, game_id: int) -> Tuple[int, Dict]:
+def get_game_info(token: str, game_id: int) -> Tuple[int, Dict]:
     """
        :param token: session token
        :param game_id: id of game which information to get
-       :return: 200, {"Players": List of players} on success, errors on error
+       :return: 200, game information on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    players = dbm.get_game_players(username, game_id)
+    game_info = dbm.get_game_info(username, game_id)
 
-    return 200, {"Players": players}
+    return 200, {"Game info": game_info}
 
 
 @function_response
@@ -564,16 +583,17 @@ def set_game_result(token: str, game_id: int, result: Counter) -> Tuple[int, Dic
 
 
 @function_response
-def get_game_result(token: str, game_id: int) -> Tuple[int, Dict]:
+def get_game_result(token: str, game_id: int, pretty=False) -> Tuple[int, Dict]:
     """
        :param token: session token
        :param game_id: id of game which information to get
-       :return: 200, {"Result": Dict[Player_id : result]} on success, errors on error
+       :param pretty: whether the names of players should be printed
+       :return: 200, {"Result": Dict[Player_id/Player_name : result]} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    game_result = dbm.get_game_result(username, game_id)
+    game_result = dbm.get_game_result(username, game_id, pretty)
 
     return 200, {"Result": game_result.most_common()}
 
@@ -594,31 +614,33 @@ def delete_game_result(token: str, game_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def get_subround_result(token: str, subround_id: int) -> Tuple[int, Dict]:
+def get_subround_result(token: str, subround_id: int, pretty=False) -> Tuple[int, Dict]:
     """
        :param token: session token
        :param subround_id: id of subround which information to get
-       :return: 200, {"Result": Dict[Player_id : result]} on success, errors on error
+       :param pretty: whether the names of players should be printed
+       :return: 200, {"Result": Dict[Player_id/Player_name : result]} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    subround_result = dbm.get_subround_result(username, subround_id)
+    subround_result = dbm.get_subround_result(username, subround_id, pretty)
 
     return 200, {"Result": subround_result.most_common()}
 
 
 @function_response
-def get_round_result(token: str, round_id: int) -> Tuple[int, Dict]:
+def get_round_result(token: str, round_id: int, pretty=False) -> Tuple[int, Dict]:
     """
        :param token: session token
        :param round_id: id of round which information to get
-       :return: 200, {"Result": Dict[Player_id, result]} on success, errors on error
+       :param pretty: whether the names of players should be printed
+       :return: 200, {"Result": Dict[Player_id/Player_name, result]} on success, errors on error
        Throws exceptions, but they are handled in wrapper
        """
     username = token_auth(token)
 
-    round_result = dbm.get_round_result(username, round_id)
+    round_result = dbm.get_round_result(username, round_id, pretty)
 
     return 200, {"Result": round_result.most_common()}
 

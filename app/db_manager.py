@@ -554,10 +554,18 @@ class DBManager:
         self.db.session.commit()
 
     @database_response
-    def get_game_players(self, username: str, game_id: int) -> List:
+    def get_game_info(self, username: str, game_id: int) -> Dict:
         user_obj = self.get_user(username)
         game_obj = self.get_game_id(user_obj.id, game_id)
-        return [entities.player.Player(dbu=p).to_base_info_dict() for p in game_obj.players]
+        game_info: Dict = {"id": game_id}
+        players = [entities.player.Player(dbu=p).to_base_info_dict() for p in game_obj.players]
+        game_info["players"] = players
+        if game_obj.results_set:
+            game_info["results set"] = True
+            game_info["results"] = self.get_game_result(username, game_id)
+        else:
+            game_info["results set"] = False
+        return game_info
 
     @database_response
     def set_game_result(self, username: str, game_id: int, result: Counter) -> None:
@@ -574,12 +582,18 @@ class DBManager:
         self.update_add_results_push_from_game(game_obj)
 
     @database_response
-    def get_game_result(self, username: str, game_id: int) -> Counter:
+    def get_game_result(self, username: str, game_id: int, pretty: bool) -> Counter:
         user_obj = self.get_user(username)
         game_obj = self.get_game_id(user_obj.id, game_id)
         if not game_obj.results_set:
             raise ObjectNotFoundException("Game results")
-        return game_obj.results
+        if not pretty:
+            return game_obj.results
+        players: List = game_obj.players
+        names_to_score: Counter = Counter()
+        for player in players:
+            names_to_score[f"{player.name_first} & {player.name_second}"] = game_obj.results[player.id]
+        return names_to_score
 
     @database_response
     def delete_game_result(self, username: str, game_id: int) -> None:
@@ -593,20 +607,32 @@ class DBManager:
         self.db.session.commit()
 
     @database_response
-    def get_subround_result(self, username: str, subround_id: int) -> Counter:
+    def get_subround_result(self, username: str, subround_id: int, pretty: bool) -> Counter:
         user_obj = self.get_user(username)
         subround_obj = self.get_subround_id(user_obj.id, subround_id)
         if subround_obj.results is None:
             raise ObjectNotFoundException("Game results")
-        return subround_obj.results
+        if not pretty:
+            return subround_obj.results
+        players: List = subround_obj.players
+        names_to_score: Counter = Counter()
+        for player in players:
+            names_to_score[f"{player.name_first} & {player.name_second}"] = subround_obj.results[player.id]
+        return names_to_score
 
     @database_response
-    def get_round_result(self, username: str, round_id: int) -> Counter:
+    def get_round_result(self, username: str, round_id: int, pretty: bool) -> Counter:
         user_obj = self.get_user(username)
         round_obj = self.get_round_id(user_obj.id, round_id)
-        if round_obj.results is None:
+        if round_obj.results is None:  # FIXME: Duplicated code
             raise ObjectNotFoundException("Game results")
-        return round_obj.results
+        if not pretty:
+            return round_obj.results
+        players: List = round_obj.players
+        names_to_score: Counter = Counter()
+        for player in players:
+            names_to_score[f"{player.name_first} & {player.name_second}"] = round_obj.results[player.id]
+        return names_to_score
 
     @database_response
     def clear_all_tables(self):
