@@ -10,6 +10,8 @@ class Player:
             self.uid = dbu.id
 
     def to_base_info_dict(self):
-        return {"name_first": self.name_first,
-                "name_second": self.name_second,
-                "id": self.uid if self.uid != 0 else "Not stated?"}
+        return {
+            "name_first": self.name_first,
+            "name_second": self.name_second,
+            "id": self.uid if self.uid != 0 else "Not stated?",
+        }

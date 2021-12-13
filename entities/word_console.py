@@ -37,7 +37,9 @@ class WordBank:
             return False
 
         word_uid = self.word_text_to_uid[word_text]
-        self.difficulty_to_words[self.uid_to_words[word_uid].difficulty].remove(word_uid)
+        self.difficulty_to_words[self.uid_to_words[word_uid].difficulty].remove(
+            word_uid
+        )
         del self.word_text_to_uid[word_text]
         del self.uid_to_words[word_uid]
         return True

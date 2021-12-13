@@ -15,8 +15,10 @@ class LogicGameSizeException(UserException):
 
 class LogicPlayersDontMatchException(UserException):
     def __init__(self):
-        super().__init__(code=400,
-                         message="Players in results don't match with the game participants")
+        super().__init__(
+            code=400,
+            message="Players in results don't match with the game participants",
+        )
 
 
 class ObjectNotFoundException(UserException):

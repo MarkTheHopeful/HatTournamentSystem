@@ -13,7 +13,13 @@ class RoundStatus(enum.Enum):
 
 
 class Round:
-    def __init__(self, name: str, participants_uid: List[int], difficulty: int, word_bank: WordBank) -> None:
+    def __init__(
+        self,
+        name: str,
+        participants_uid: List[int],
+        difficulty: int,
+        word_bank: WordBank,
+    ) -> None:
         self.name: str = name
         self.participants_uid: List[int] = participants_uid
         self.difficulty: int = difficulty
@@ -29,9 +35,15 @@ class Round:
             return False
         if not set(participants).issubset(self.participants_uid):
             return False
-        new_subround: Subround = Subround(participants, [str(word) for word in
-                                                         self.word_bank.extract_words_by_difficulty(self.difficulty,
-                                                                                                    words_to_take)])
+        new_subround: Subround = Subround(
+            participants,
+            [
+                str(word)
+                for word in self.word_bank.extract_words_by_difficulty(
+                    self.difficulty, words_to_take
+                )
+            ],
+        )
         self.subrounds.append(new_subround)
         return True
 
@@ -70,13 +82,17 @@ class Subround:
         self.results: CounterT[int] = Counter(participants)
         self.games: List[Game] = []
 
-    def split_players_to_games(self, amount_of_games: int) -> bool:  # TODO: replace bool with exceptions
+    def split_players_to_games(
+        self, amount_of_games: int
+    ) -> bool:  # TODO: replace bool with exceptions
         if self.state != SubroundStatus.not_split:
             return False
         if amount_of_games * 2 > len(self.participants_uid):
             return False
 
-        parts = shuffle_and_split_near_equal_parts(self.participants_uid, amount_of_games)
+        parts = shuffle_and_split_near_equal_parts(
+            self.participants_uid, amount_of_games
+        )
         for part in parts:
             self.games.append(Game(part, self.words))
 
@@ -84,7 +100,10 @@ class Subround:
         return True
 
     def conclude_results(self) -> bool:  # TODO: replace bool with exceptions
-        if self.state == SubroundStatus.not_split or self.state == SubroundStatus.completed:
+        if (
+            self.state == SubroundStatus.not_split
+            or self.state == SubroundStatus.completed
+        ):
             return False
         for game in self.games:
             if game.state != GameStatus.completed:

@@ -48,7 +48,9 @@ if __name__ == "__main__":
         elif command == "add word":
             word: str = input("Введите слово:\n")
             difficulty: int = int(input("Введите сложность:\n"))
-            result, word_id = current_tournament.add_word(word, difficulty)  # FIXME: No type annotation
+            result, word_id = current_tournament.add_word(
+                word, difficulty
+            )  # FIXME: No type annotation
             if result:
                 print(f"Слово добавлено, его uid: {word_id}")
             else:
@@ -71,7 +73,9 @@ if __name__ == "__main__":
         elif command == "delete players":
             first_player: str = input("Введите имя и фамилию первого игрока:\n")
             second_player: str = input("Введите имя и фамилию второго игрока:\n")
-            result: bool = current_tournament.delete_play_pair(first_player, second_player)
+            result: bool = current_tournament.delete_play_pair(
+                first_player, second_player
+            )
             if result:
                 print("Пара игроков успешно удалена")
             else:
@@ -83,7 +87,9 @@ if __name__ == "__main__":
                 current_tournament.add_play_pair(play_1, play_2)
             print("Добавлены слова и игроки для примера")
         elif command == "add round":
-            players_uid: List[int] = list(map(int, input("Введите uid пар участников нового раунда:\n").split()))
+            players_uid: List[int] = list(
+                map(int, input("Введите uid пар участников нового раунда:\n").split())
+            )
             difficulty: int = int(input("Введите ожидаемую сложность раунда:\n"))
             name: str = input("Введите название раунда:\n")
             current_tournament.create_round(players_uid, difficulty, name)
@@ -99,7 +105,11 @@ if __name__ == "__main__":
             if current_round is None:
                 print("Сначала выберите раунд")
                 continue
-            players_uid: List[int] = list(map(int, input("Введите uid пар участников нового подраунда:\n").split()))
+            players_uid: List[int] = list(
+                map(
+                    int, input("Введите uid пар участников нового подраунда:\n").split()
+                )
+            )
             words_amount: int = int(input("Укажите, сколько слов из банка взять:\n"))
             result: bool = current_round.add_subround(players_uid, words_amount)
             if result:
@@ -120,7 +130,9 @@ if __name__ == "__main__":
             if current_subround is None:
                 print("Сначала выберите подраунд")
                 continue
-            games_amount: int = int(input("Укажите, на сколько игр разбить подраунд:\n"))
+            games_amount: int = int(
+                input("Укажите, на сколько игр разбить подраунд:\n")
+            )
             result: bool = current_subround.split_players_to_games(games_amount)
             if result:
                 print("Подраунд успешно разбит на игры")
@@ -143,7 +155,10 @@ if __name__ == "__main__":
             game_results: CounterT[int] = Counter(current_game.participants_uid)
             for player_uid in current_game.participants_uid:
                 game_results[player_uid] = int(
-                    input(f"Enter result for pair {current_tournament.uid_to_play_pair[player_uid]}:\n"))
+                    input(
+                        f"Enter result for pair {current_tournament.uid_to_play_pair[player_uid]}:\n"
+                    )
+                )
 
             result: bool = current_game.conclude_result(game_results)
             if result:

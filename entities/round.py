@@ -8,5 +8,4 @@ class Round:
             self.uid = dbu.id
 
     def to_base_info_dict(self):
-        return {"name": self.name,
-                "id": self.uid if self.uid != 0 else "Not stated?"}
+        return {"name": self.name, "id": self.uid if self.uid != 0 else "Not stated?"}

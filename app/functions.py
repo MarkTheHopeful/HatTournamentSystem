@@ -20,7 +20,9 @@ from flask import Response
 from typing import Callable, Tuple, Dict, Counter, List
 
 
-def function_response(result_function: Callable[..., Tuple[int, Dict]]) -> Callable[..., Response]:
+def function_response(
+    result_function: Callable[..., Tuple[int, Dict]]
+) -> Callable[..., Response]:
     """
     :param result_function: function to wrap, returns code (Int) and data (JSON)
     :return: wrapped function, input stays same, exceptions handled, output converted to str(Response)
@@ -44,7 +46,7 @@ def function_response(result_function: Callable[..., Tuple[int, Dict]]) -> Calla
             status_code = 500
             data = {"Error": str(e), "Stack": full_stack()}
         response = make_response(data, status_code)
-        response.headers['Content-Type'] = 'application/json'
+        response.headers["Content-Type"] = "application/json"
         return response
 
     return wrapped
@@ -70,7 +72,11 @@ def status() -> Tuple[int, Dict]:  # TODO: rewrite to add meaningful information
     :return: 200, {'State': 'Active', 'API version': [str], 'DB manager': 'OK/FAILED'}
     """
     code = 200
-    data = {'State': 'Active', 'API version': 'v1', 'DB manager': 'OK' if dbm.is_ok() else "FAILED"}
+    data = {
+        "State": "Active",
+        "API version": "v1",
+        "DB manager": "OK" if dbm.is_ok() else "FAILED",
+    }
     return code, data
 
 
@@ -91,7 +97,7 @@ def login(username: str, password: str) -> Tuple[int, Dict]:
     tok_uuid, tok_exp = gen_token()
     dbm.insert_token(tok_uuid, tok_exp, username)
     code = 201
-    data = {'Token': tok_uuid}
+    data = {"Token": tok_uuid}
 
     return code, data
 
@@ -168,7 +174,9 @@ def delete_tournament(token: str, tournament_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def new_player(token: str, tournament_id: int, name_first: str, name_second: str) -> Tuple[int, Dict]:
+def new_player(
+    token: str, tournament_id: int, name_first: str, name_second: str
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param tournament_id: id of the tournament to which the players will be added
@@ -212,7 +220,9 @@ def delete_player(token: str, pair_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def new_word(token: str, tournament_id: int, word_text: str, word_difficulty: int) -> Tuple[int, Dict]:
+def new_word(
+    token: str, tournament_id: int, word_text: str, word_difficulty: int
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param tournament_id: id of the tournament to which the word will be added
@@ -328,7 +338,9 @@ def add_player_to_round(token: str, round_id: int, pair_id: int) -> Tuple[int, D
 
 
 @function_response
-def add_players_to_round(token: str, round_id: int, pair_ids: List[int]) -> Tuple[int, Dict]:
+def add_players_to_round(
+    token: str, round_id: int, pair_ids: List[int]
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param round_id: id of the round to interact with
@@ -338,7 +350,7 @@ def add_players_to_round(token: str, round_id: int, pair_ids: List[int]) -> Tupl
     """
     username = token_auth(token)
 
-    for pair_id in pair_ids:    # FIXME: if error occurs after some
+    for pair_id in pair_ids:  # FIXME: if error occurs after some
         dbm.add_pair_id_to_round(username, round_id, pair_id)
 
     return 200, {}
@@ -359,7 +371,9 @@ def get_players_in_round(token: str, round_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def delete_player_from_round(token: str, round_id: int, pair_id: int) -> Tuple[int, Dict]:
+def delete_player_from_round(
+    token: str, round_id: int, pair_id: int
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param round_id: id of the round to interact with
@@ -430,7 +444,9 @@ def delete_subround(token: str, subround_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def add_player_to_subround(token: str, subround_id: int, pair_id: int) -> Tuple[int, Dict]:
+def add_player_to_subround(
+    token: str, subround_id: int, pair_id: int
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param subround_id: id of the subround to interact with
@@ -443,8 +459,11 @@ def add_player_to_subround(token: str, subround_id: int, pair_id: int) -> Tuple[
 
     return 200, {}
 
+
 @function_response
-def add_players_to_subround(token: str, subround_id: int, pair_ids: List[int]) -> Tuple[int, Dict]:
+def add_players_to_subround(
+    token: str, subround_id: int, pair_ids: List[int]
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param subround_id: id of the subround to interact with
@@ -454,7 +473,7 @@ def add_players_to_subround(token: str, subround_id: int, pair_ids: List[int]) -
     """
     username = token_auth(token)
 
-    for pair_id in pair_ids:    # FIXME: if error occurs after some
+    for pair_id in pair_ids:  # FIXME: if error occurs after some
         dbm.add_pair_id_to_subround(username, subround_id, pair_id)
 
     return 200, {}
@@ -474,7 +493,9 @@ def get_players_in_subround(token: str, subround_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def delete_player_from_subround(token: str, subround_id: int, pair_id: int) -> Tuple[int, Dict]:
+def delete_player_from_subround(
+    token: str, subround_id: int, pair_id: int
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param subround_id: id of the subround to interact with
@@ -489,8 +510,9 @@ def delete_player_from_subround(token: str, subround_id: int, pair_id: int) -> T
 
 
 @function_response
-def add_x_words_of_diff_y_to_subround(token: str, subround_id: int,
-                                      words_difficulty: int, words_amount: int) -> Tuple[int, Dict]:
+def add_x_words_of_diff_y_to_subround(
+    token: str, subround_id: int, words_difficulty: int, words_amount: int
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param subround_id: id of the subround to interact with
@@ -501,7 +523,9 @@ def add_x_words_of_diff_y_to_subround(token: str, subround_id: int,
     """
     username = token_auth(token)
 
-    dbm.add_x_words_of_diff_y_to_subround(username, subround_id, words_difficulty, words_amount)
+    dbm.add_x_words_of_diff_y_to_subround(
+        username, subround_id, words_difficulty, words_amount
+    )
     return 200, {}
 
 
@@ -521,7 +545,9 @@ def get_subround_words(token: str, subround_id: int) -> Tuple[int, Dict]:
 
 
 @function_response
-def split_subround_into_games(token: str, subround_id: int, games_amount: int) -> Tuple[int, Dict]:
+def split_subround_into_games(
+    token: str, subround_id: int, games_amount: int
+) -> Tuple[int, Dict]:
     """
     :param token: session token
     :param subround_id: id of the subround to interact with
@@ -569,11 +595,11 @@ def undo_split_subround_into_games(token: str, subround_id: int) -> Tuple[int, D
 @function_response
 def get_game_info(token: str, game_id: int) -> Tuple[int, Dict]:
     """
-       :param token: session token
-       :param game_id: id of game which information to get
-       :return: 200, game information on success, errors on error
-       Throws exceptions, but they are handled in wrapper
-       """
+    :param token: session token
+    :param game_id: id of game which information to get
+    :return: 200, game information on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
     username = token_auth(token)
 
     game_info = dbm.get_game_info(username, game_id)
@@ -584,12 +610,12 @@ def get_game_info(token: str, game_id: int) -> Tuple[int, Dict]:
 @function_response
 def set_game_result(token: str, game_id: int, result: Counter) -> Tuple[int, Dict]:
     """
-       :param token: session token
-       :param game_id: id of game which information to set
-       :param result: result of game
-       :return: 201, {} on success, errors on error
-       Throws exceptions, but they are handled in wrapper
-       """
+    :param token: session token
+    :param game_id: id of game which information to set
+    :param result: result of game
+    :return: 201, {} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
     username = token_auth(token)
 
     dbm.set_game_result(username, game_id, result)
@@ -600,12 +626,12 @@ def set_game_result(token: str, game_id: int, result: Counter) -> Tuple[int, Dic
 @function_response
 def get_game_result(token: str, game_id: int, pretty=False) -> Tuple[int, Dict]:
     """
-       :param token: session token
-       :param game_id: id of game which information to get
-       :param pretty: whether the names of players should be printed
-       :return: 200, {"Result": Dict[Player_id/Player_name : result]} on success, errors on error
-       Throws exceptions, but they are handled in wrapper
-       """
+    :param token: session token
+    :param game_id: id of game which information to get
+    :param pretty: whether the names of players should be printed
+    :return: 200, {"Result": Dict[Player_id/Player_name : result]} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
     username = token_auth(token)
 
     game_result = dbm.get_game_result(username, game_id, pretty)
@@ -616,11 +642,11 @@ def get_game_result(token: str, game_id: int, pretty=False) -> Tuple[int, Dict]:
 @function_response
 def delete_game_result(token: str, game_id: int) -> Tuple[int, Dict]:
     """
-       :param token: session token
-       :param game_id: id of game which information to get
-       :return: 200, {} on success, errors on error
-       Throws exceptions, but they are handled in wrapper
-       """
+    :param token: session token
+    :param game_id: id of game which information to get
+    :return: 200, {} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
     username = token_auth(token)
 
     dbm.delete_game_result(username, game_id)
@@ -631,12 +657,12 @@ def delete_game_result(token: str, game_id: int) -> Tuple[int, Dict]:
 @function_response
 def get_subround_result(token: str, subround_id: int, pretty=False) -> Tuple[int, Dict]:
     """
-       :param token: session token
-       :param subround_id: id of subround which information to get
-       :param pretty: whether the names of players should be printed
-       :return: 200, {"Result": Dict[Player_id/Player_name : result]} on success, errors on error
-       Throws exceptions, but they are handled in wrapper
-       """
+    :param token: session token
+    :param subround_id: id of subround which information to get
+    :param pretty: whether the names of players should be printed
+    :return: 200, {"Result": Dict[Player_id/Player_name : result]} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
     username = token_auth(token)
 
     subround_result = dbm.get_subround_result(username, subround_id, pretty)
@@ -647,12 +673,12 @@ def get_subround_result(token: str, subround_id: int, pretty=False) -> Tuple[int
 @function_response
 def get_round_result(token: str, round_id: int, pretty=False) -> Tuple[int, Dict]:
     """
-       :param token: session token
-       :param round_id: id of round which information to get
-       :param pretty: whether the names of players should be printed
-       :return: 200, {"Result": Dict[Player_id/Player_name, result]} on success, errors on error
-       Throws exceptions, but they are handled in wrapper
-       """
+    :param token: session token
+    :param round_id: id of round which information to get
+    :param pretty: whether the names of players should be printed
+    :return: 200, {"Result": Dict[Player_id/Player_name, result]} on success, errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
     username = token_auth(token)
 
     round_result = dbm.get_round_result(username, round_id, pretty)
@@ -697,7 +723,9 @@ def fill_with_example(secret_code):
 
     subround_ids = []
     for subround_name, round_ind in template_data.EXAMPLE_SUBROUNDS:
-        subround_ids.append(dbm.insert_subround(example_username, round_ids[round_ind], subround_name))
+        subround_ids.append(
+            dbm.insert_subround(example_username, round_ids[round_ind], subround_name)
+        )
 
     for word, diff in template_data.EXAMPLE_WORDS:
         dbm.insert_word(example_username, tournament_id, word, diff)

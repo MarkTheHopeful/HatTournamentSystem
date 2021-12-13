@@ -16,20 +16,26 @@ def full_stack():
     if exc is not None:  # i.e. an exception is present
         del stack[-1]  # remove call of full_stack, the printed exception
         # will contain the caught exception caller instead
-    trc = 'Traceback (most recent call last):\n'
-    stack_str = trc + ''.join(traceback.format_list(stack))
+    trc = "Traceback (most recent call last):\n"
+    stack_str = trc + "".join(traceback.format_list(stack))
     if exc is not None:
-        stack_str += '  ' + traceback.format_exc().lstrip(trc)
+        stack_str += "  " + traceback.format_exc().lstrip(trc)
     return stack_str
 
 
 def gen_token() -> Tuple[str, DatetimeT]:
-    return uuid.uuid4().hex, datetime.datetime.utcnow() + datetime.timedelta(seconds=Config.TOKEN_LIFETIME_SEC)
+    return uuid.uuid4().hex, datetime.datetime.utcnow() + datetime.timedelta(
+        seconds=Config.TOKEN_LIFETIME_SEC
+    )
 
 
-def shuffle_and_split_near_equal_parts(items: List[Any], amount: int) -> List[List[Any]]:
+def shuffle_and_split_near_equal_parts(
+    items: List[Any], amount: int
+) -> List[List[Any]]:
     if amount > len(items):
-        raise Exception("Not possible to split list to more parts, than the length of the list")
+        raise Exception(
+            "Not possible to split list to more parts, than the length of the list"
+        )
     items_shuffled = list(items)
     random.shuffle(items_shuffled)
     result = [[] for _ in range(amount)]
@@ -42,7 +48,9 @@ def gen_rand_key() -> int:
     return random.randint(-Config.RANDOM_BORDER, Config.RANDOM_BORDER)
 
 
-def str_list(items: List[Any], prefix: str = "", separator: str = "\n", suffix: str = "") -> str:
+def str_list(
+    items: List[Any], prefix: str = "", separator: str = "\n", suffix: str = ""
+) -> str:
     return prefix + separator.join([str(item) for item in items]) + suffix
 
 

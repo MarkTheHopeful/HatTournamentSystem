@@ -8,5 +8,4 @@ class Subround:
             self.uid = dbu.id
 
     def to_base_info_dict(self):
-        return {"name": self.name,
-                "id": self.uid}
+        return {"name": self.name, "id": self.uid}

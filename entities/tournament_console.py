@@ -25,7 +25,10 @@ class Tournament:
         return self.words.delete_word(word_text)
 
     def add_play_pair(self, first_player: str, second_player: str) -> bool:
-        if first_player in self.player_name_to_pair_uid.keys() or second_player in self.player_name_to_pair_uid.keys():
+        if (
+            first_player in self.player_name_to_pair_uid.keys()
+            or second_player in self.player_name_to_pair_uid.keys()
+        ):
             return False
 
         pair_uid: int = self.pairs_added
@@ -38,11 +41,16 @@ class Tournament:
         return True
 
     def delete_play_pair(self, first_player: str, second_player: str) -> bool:
-        if first_player not in self.player_name_to_pair_uid.keys() \
-                or second_player not in self.player_name_to_pair_uid.keys():
+        if (
+            first_player not in self.player_name_to_pair_uid.keys()
+            or second_player not in self.player_name_to_pair_uid.keys()
+        ):
             return False
 
-        if self.player_name_to_pair_uid[first_player] != self.player_name_to_pair_uid[second_player]:
+        if (
+            self.player_name_to_pair_uid[first_player]
+            != self.player_name_to_pair_uid[second_player]
+        ):
             return False
 
         pair_uid: int = self.player_name_to_pair_uid[first_player]
@@ -52,6 +60,8 @@ class Tournament:
 
         return True
 
-    def create_round(self, participants_uid: List[int], difficulty: int, name: str) -> None:
+    def create_round(
+        self, participants_uid: List[int], difficulty: int, name: str
+    ) -> None:
         new_round: Round = Round(name, participants_uid, difficulty, self.words)
         self.rounds.append(new_round)

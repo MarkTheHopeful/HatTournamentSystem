@@ -8,5 +8,7 @@ class User:
             self.uid = dbu.id
 
     def to_base_info_dict(self):
-        return {"username": self.username,
-                "id": self.uid if self.uid > 0 else "Not stated?"}
+        return {
+            "username": self.username,
+            "id": self.uid if self.uid > 0 else "Not stated?",
+        }
