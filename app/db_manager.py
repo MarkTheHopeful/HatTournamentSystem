@@ -439,6 +439,17 @@ class DBManager:
         return new_subround.id
 
     @database_response
+    def get_subround_info(self, username: str, subround_id: int) -> Dict:
+        user_obj = self.get_user(username)
+        subround_obj = self.get_subround_id(user_obj.id, subround_id)
+        subround_info: Dict = SubroundE(subround_obj).to_base_info_dict()
+        games = self.get_games(username, subround_id)
+        subround_info["divided into games"] = len(games) > 0
+        subround_info["games"] = games
+        subround_info["players"] = self.get_players_in_subround(username, subround_id)
+        return subround_info
+
+    @database_response
     def get_subrounds(self, username: str, round_id: int) -> List:
         user_obj = self.get_user(username)
         round_obj = self.get_round_id(user_obj.id, round_id)

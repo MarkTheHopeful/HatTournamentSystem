@@ -273,7 +273,7 @@ def new_round(token: str, tournament_id: int, round_name: str) -> Tuple[int, Dic
 def get_round_info(token: str, round_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
-    :param round_id: id of tournament
+    :param round_id: id of round
     :return: 200, Round information on success; errors on error
     Throws exceptions, but they are handled in wrapper
     """
@@ -368,6 +368,20 @@ def new_subround(token: str, round_id: int, subround_name: str) -> Tuple[int, Di
 
     new_id = dbm.insert_subround(username, round_id, subround_name)
     return 201, {"ID": new_id}
+
+
+@function_response
+def get_subround_info(token: str, subround_id: int) -> Tuple[int, Dict]:
+    """
+    :param token: session token
+    :param subround_id: id of subround
+    :return: 200, Subround information on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+    subround_info = dbm.get_subround_info(username, subround_id)
+
+    return 200, {"Subround info": subround_info}
 
 
 @function_response

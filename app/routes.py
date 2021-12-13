@@ -116,6 +116,7 @@ def get_round(round_id: int):
     token: str = request.get_json()["token"]
     return functions.get_round_info(token, round_id)
 
+
 @app.route('/api/v1/rounds', methods=['GET'])
 def get_rounds():
     token: str = request.get_json()["token"]
@@ -123,14 +124,14 @@ def get_rounds():
     return functions.get_rounds(token, tournament_id)
 
 
-@app.route('/api/v1/rounds', methods=['DELETE'])
+@app.route('/api/v1/round', methods=['DELETE'])
 def delete_round():
     token: str = request.get_json()["token"]
     round_id: int = int(request.get_json()["round_id"])
     return functions.delete_round(token, round_id)
 
 
-@app.route('/api/v1/rounds/players', methods=['POST'])
+@app.route('/api/v1/round/player', methods=['POST'])
 def add_player_to_round():
     token: str = request.get_json()["token"]
     round_id: int = int(request.get_json()["round_id"])
@@ -138,14 +139,14 @@ def add_player_to_round():
     return functions.add_player_to_round(token, round_id, pair_id)
 
 
-@app.route('/api/v1/rounds/players', methods=['GET'])
+@app.route('/api/v1/round/players', methods=['GET'])
 def get_players_in_round():
     token: str = request.get_json()["token"]
     round_id: int = int(request.get_json()["round_id"])
     return functions.get_players_in_round(token, round_id)
 
 
-@app.route('/api/v1/rounds/players', methods=['DELETE'])
+@app.route('/api/v1/round/player', methods=['DELETE'])
 def delete_player_from_round():
     token: str = request.get_json()["token"]
     round_id: int = int(request.get_json()["round_id"])
@@ -153,12 +154,18 @@ def delete_player_from_round():
     return functions.delete_player_from_round(token, round_id, pair_id)
 
 
-@app.route('/api/v1/subrounds', methods=['POST'])
+@app.route('/api/v1/subround', methods=['POST'])
 def new_subround():
     token: str = request.get_json()["token"]
     round_id: int = int(request.get_json()["round_id"])
     subround_name: str = request.get_json()["subround_name"]
     return functions.new_subround(token, round_id, subround_name)
+
+
+@app.route('/api/v1/subround/<subround_id>', methods=['GET'])
+def get_subround(subround_id: int):
+    token: str = request.get_json()["token"]
+    return functions.get_subround_info(token, subround_id)
 
 
 @app.route('/api/v1/subrounds', methods=['GET'])
@@ -168,14 +175,14 @@ def get_subrounds():
     return functions.get_subrounds(token, round_id)
 
 
-@app.route('/api/v1/subrounds', methods=['DELETE'])
+@app.route('/api/v1/subround', methods=['DELETE'])
 def delete_subround():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
     return functions.delete_subround(token, subround_id)
 
 
-@app.route('/api/v1/subrounds/players', methods=['POST'])
+@app.route('/api/v1/subround/player', methods=['POST'])
 def add_player_to_subround():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
@@ -183,14 +190,14 @@ def add_player_to_subround():
     return functions.add_player_to_subround(token, subround_id, pair_id)
 
 
-@app.route('/api/v1/subrounds/players', methods=['GET'])
+@app.route('/api/v1/subround/players', methods=['GET'])
 def get_players_from_subround():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
     return functions.get_players_in_subround(token, subround_id)
 
 
-@app.route('/api/v1/subrounds/player', methods=['DELETE'])
+@app.route('/api/v1/subround/player', methods=['DELETE'])
 def delete_player_from_subround():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
@@ -198,7 +205,7 @@ def delete_player_from_subround():
     return functions.delete_player_from_subround(token, subround_id, pair_id)
 
 
-@app.route('/api/v1/subrounds/words', methods=['POST'])
+@app.route('/api/v1/subround/word', methods=['POST'])
 def add_x_words_of_diff_y_to_subround():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
@@ -207,14 +214,14 @@ def add_x_words_of_diff_y_to_subround():
     return functions.add_x_words_of_diff_y_to_subround(token, subround_id, words_difficulty, words_amount)
 
 
-@app.route('/api/v1/subrounds/words', methods=['GET'])
+@app.route('/api/v1/subround/words', methods=['GET'])
 def get_subround_words():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
     return functions.get_subround_words(token, subround_id)
 
 
-@app.route('/api/v1/subrounds/split', methods=['POST'])
+@app.route('/api/v1/subround/split', methods=['POST'])
 def split_subround_into_games():
     token: str = request.get_json()["token"]
     subround_id: int = int(request.get_json()["subround_id"])
