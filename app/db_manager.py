@@ -657,7 +657,7 @@ class DBManager:
         game_info["players"] = players
         if game_obj.results_set:
             game_info["results set"] = True
-            game_info["results"] = self.get_game_result(username, game_id)
+            game_info["results"] = self.get_game_result(username, game_id, pretty=True)
         else:
             game_info["results set"] = False
         return game_info

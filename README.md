@@ -11,7 +11,7 @@ HatTournamentSystem (HTS in the abbreviation) is a service to simplify the proce
 ## Features
 
 Currently the service allows you to:
-* Deploy the system locally or use a global instance
+* Deploy the system locally or use a global instance (for ip ask the author)
 * Create tournaments, add players and words to it
 * Create rounds for tournament stages (qualification, quarterfinals and so on)
 * Create subrounds for sets of games taking place at the same time
