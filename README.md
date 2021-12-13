@@ -1,16 +1,30 @@
 # HatTournamentSystem
 A system for organizing tournaments for the game "Hat".
 
-This application will allow you to automate the process of preparing and organizing tournaments for the game "Hat".
+[![GitHub top language](https://img.shields.io/github/languages/top/MarkTheHopeful/HatTournamentSystem)](https://github.com/MarkTheHopeful/HatTournamentSystem)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
-It is planned to support the following functionality: 
-  * Work with a word bank (adding / removing / taking words of a certain complexity)
-  * Work with a list of participants
-  * Creating tournament rounds
-  * Splitting round participants by games
-  * Processing protocols of game results
-  * Determining who succeeded to move to the next round
-  * Creating and filling templates for protocols
+## What is HatTournamentSystem
 
-It is planned to implement the server part with an API to support the deployment of the application in the local network. 
-It is also planned to implement different client options for convenient work with the system on the network, without the need to have direct access to the computer on which the system is deployed.
+HatTournamentSystem (HTS in the abbreviation) is a service to simplify the process of organizing and holding tournaments on the game "Hat"
+
+## Features
+
+Currently the service allows you to:
+* Deploy the system locally or use a global instance
+* Create tournaments, add players and words to it
+* Create rounds for tournament stages (qualification, quarterfinals and so on)
+* Create subrounds for sets of games taking place at the same time
+* Split subrounds into games randomly
+* Set results for games, and automatically get results for for games, subrounds and rounds
+
+## Future plans
+
+* Add instructions for using the API
+* Add telegram-bot or web client for more comfortable interaction
+* Make automatic generation of player lists and results
+
+## Contacts
+
+In case of good ideas and/or bugs found, email me [markthehopeful0@gmail.com](mailto:markthehopeful@gmail.com) or telegram me [@c0deEater](https://t.me/c0deEater).
+
