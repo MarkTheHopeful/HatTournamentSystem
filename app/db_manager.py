@@ -1,4 +1,4 @@
-from typing import Tuple, Callable, Optional, List
+from typing import Tuple, Callable, Optional, List, Dict
 from flask_sqlalchemy import SQLAlchemy
 
 from exceptions import KnownException
@@ -286,6 +286,22 @@ class DBManager:
     def get_tournaments(self, username: str) -> List:
         user_obj = self.get_user(username)
         return [entities.tournament.Tournament(dbu=t).to_base_info_dict() for t in user_obj.tournaments]
+
+    @database_response
+    def get_tournament_info(self, username: str, tournament_id: int) -> Dict:
+        user_obj = self.get_user(username)
+        tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
+        tournament_info: Dict = entities.tournament.Tournament(tournament_obj).to_base_info_dict()
+        tournament_info["rounds"] = self.get_rounds(username, tournament_id)
+        tournament_info["players"] = self.get_players(username, tournament_id)
+        return tournament_info
+
+    @database_response
+    def delete_tournament(self, username: str, tournament_id: int) -> None:
+        user_obj = self.get_user(username)
+        tournament_obj = self.get_tournament_id(user_obj.id, tournament_id)
+        self.db.session.delete(tournament_obj)
+        self.db.session.commit()
 
     @database_response
     def insert_round(self, username: str, tournament_id: int, round_name: str) -> int:

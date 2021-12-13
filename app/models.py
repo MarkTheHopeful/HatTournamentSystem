@@ -26,9 +26,9 @@ class Token(db.Model):
 class Tournament(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, index=True, nullable=False)
-    players = db.relationship('Player', backref='tournament', lazy='dynamic')
-    words = db.relationship('Word', backref='tournament', lazy='dynamic')
-    rounds = db.relationship('Round', backref='tournament', lazy='dynamic')
+    players = db.relationship('Player', backref='tournament', lazy='dynamic', cascade="all, delete-orphan")
+    words = db.relationship('Word', backref='tournament', lazy='dynamic', cascade="all, delete-orphan")
+    rounds = db.relationship('Round', backref='tournament', lazy='dynamic', cascade="all, delete-orphan")
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
@@ -54,21 +54,21 @@ class Round(db.Model):
         secondary=players_in_rounds,
         back_populates="rounds",
         lazy='dynamic')
-    subrounds = db.relationship('Subround', backref='round', lazy='dynamic')
+    subrounds = db.relationship('Subround', backref='round', lazy='dynamic', cascade="all, delete-orphan")
     results = db.Column(db.PickleType)
 
 
 class Subround(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, index=True)
-    round_id = db.Column(db.Integer, db.ForeignKey('round.id'))
+    round_id = db.Column(db.Integer, db.ForeignKey('round.id'), nullable=False)
     players = db.relationship(
         "Player",
         secondary=players_in_subrounds,
         back_populates="subrounds",
         lazy='dynamic'
     )
-    words = db.relationship('Word', backref='subround', lazy='dynamic', cascade="all, delete-orphan")
+    words = db.relationship('Word', backref='subround', lazy='dynamic')
     games = db.relationship('Game', backref='subround', lazy='dynamic', cascade="all, delete-orphan")
     results = db.Column(db.PickleType)
 

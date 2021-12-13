@@ -38,10 +38,23 @@ def new_tournament():
     return functions.new_tournament(token, name)
 
 
-@app.route('/api/v1/tournament', methods=['GET'])
+@app.route('/api/v1/tournaments', methods=['GET'])
 def get_tournaments():
     token: str = request.get_json()["token"]
     return functions.get_tournaments(token)
+
+
+@app.route('/api/v1/tournament/<tournament_id>', methods=['GET'])
+def get_tournament(tournament_id: int):
+    token: str = request.get_json()["token"]
+    return functions.get_tournament_info(token, tournament_id)
+
+
+@app.route('/api/v1/tournament', methods=['DELETE'])
+def delete_tournament():
+    token: str = request.get_json()["token"]
+    tournament_id: int = int(request.get_json()["tournament_id"])
+    return functions.delete_tournament(token, tournament_id)
 
 
 @app.route('/api/v1/players', methods=['POST'])

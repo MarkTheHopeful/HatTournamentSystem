@@ -139,6 +139,34 @@ def get_tournaments(token: str) -> Tuple[int, Dict]:
 
 
 @function_response
+def get_tournament_info(token: str, tournament_id: int) -> Tuple[int, Dict]:
+    """
+    :param token: session token
+    :param tournament_id: id of tournament
+    :return: 200, Tournament information on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+    tournament_info = dbm.get_tournament_info(username, tournament_id)
+
+    return 200, {"Tournament info": tournament_info}
+
+
+@function_response
+def delete_tournament(token: str, tournament_id: int) -> Tuple[int, Dict]:
+    """
+    :param token: session token
+    :param tournament_id: id of tournament to delete
+    :return: 200, {} on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+    dbm.delete_tournament(username, tournament_id)
+
+    return 200, {}
+
+
+@function_response
 def new_player(token: str, tournament_id: int, name_first: str, name_second: str) -> Tuple[int, Dict]:
     """
     :param token: session token
