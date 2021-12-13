@@ -57,7 +57,7 @@ def delete_tournament():
     return functions.delete_tournament(token, tournament_id)
 
 
-@app.route('/api/v1/players', methods=['POST'])
+@app.route('/api/v1/player', methods=['POST'])
 def new_player():
     token: str = request.get_json()["token"]
     tournament_id: int = int(request.get_json()["tournament_id"])
@@ -73,14 +73,14 @@ def get_players():
     return functions.get_players(token, tournament_id)
 
 
-@app.route('/api/v1/players', methods=['DELETE'])
+@app.route('/api/v1/player', methods=['DELETE'])
 def delete_player():
     token: str = request.get_json()["token"]
     pair_id: int = int(request.get_json()["pair_id"])
     return functions.delete_player(token, pair_id)
 
 
-@app.route('/api/v1/words', methods=['POST'])
+@app.route('/api/v1/word', methods=['POST'])
 def new_word():
     token: str = request.get_json()["token"]
     tournament_id: int = request.get_json()["tournament_id"]
@@ -96,20 +96,25 @@ def get_words():
     return functions.get_words(token, tournament_id)
 
 
-@app.route('/api/v1/words', methods=['DELETE'])
+@app.route('/api/v1/word', methods=['DELETE'])
 def delete_word():
     token: str = request.get_json()["token"]
     word_id: int = int(request.get_json()["word_id"])
     return functions.delete_word(token, word_id)
 
 
-@app.route('/api/v1/rounds', methods=['POST'])
+@app.route('/api/v1/round', methods=['POST'])
 def new_round():
     token: str = request.get_json()["token"]
     tournament_id: int = int(request.get_json()["tournament_name"])
     round_name: str = request.get_json()["round_name"]
     return functions.new_round(token, tournament_id, round_name)
 
+
+@app.route('/api/v1/round/<round_id>', methods=['GET'])
+def get_round(round_id: int):
+    token: str = request.get_json()["token"]
+    return functions.get_round_info(token, round_id)
 
 @app.route('/api/v1/rounds', methods=['GET'])
 def get_rounds():

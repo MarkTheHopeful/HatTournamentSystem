@@ -322,6 +322,15 @@ class DBManager:
         return [entities.round.Round(dbu=r).to_base_info_dict() for r in tournament.rounds]
 
     @database_response
+    def get_round_info(self, username: str, round_id: int) -> Dict:
+        user_obj = self.get_user(username)
+        round_obj = self.get_round_id(user_obj.id, round_id)
+        round_info: Dict = entities.round.Round(round_obj).to_base_info_dict()
+        round_info["subrounds"] = self.get_subrounds(username, round_id)
+        round_info["players"] = self.get_players_in_round(username, round_id)
+        return round_info
+
+    @database_response
     def delete_round(self, username: str, round_id: int) -> None:
         user_obj = self.get_user(username)
         round_to_delete = self.get_round_id(user_obj.id, round_id)

@@ -270,6 +270,20 @@ def new_round(token: str, tournament_id: int, round_name: str) -> Tuple[int, Dic
 
 
 @function_response
+def get_round_info(token: str, round_id: int) -> Tuple[int, Dict]:
+    """
+    :param token: session token
+    :param round_id: id of tournament
+    :return: 200, Round information on success; errors on error
+    Throws exceptions, but they are handled in wrapper
+    """
+    username = token_auth(token)
+    round_info = dbm.get_round_info(username, round_id)
+
+    return 200, {"Round info": round_info}
+
+
+@function_response
 def get_rounds(token: str, tournament_id: int) -> Tuple[int, Dict]:
     """
     :param token: session token
